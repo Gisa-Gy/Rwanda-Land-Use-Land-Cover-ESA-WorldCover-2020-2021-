@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GEE Practical: Kigali City LULC — Esri 10 m Sentinel-2 Land Cover (2017 · 2021 · 2025)</title>
+<style>
+  :root{
+    --bg:#0f1b2d; --panel:#16263f; --card:#1b2f4d; --accent:#00b4d8;
+    --accent2:#48cae4; --text:#e8eef5; --muted:#9fb2c8; --line:#26405f;
+    --code-bg:#0b1526; --ok:#2ec27e; --warn:#f5a623; --sidebar:#0c1524;
+    --esri:#3ea34a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.65;font-size:15px}
+  .wrap{display:flex;min-height:100vh}
+  .sidebar{width:300px;background:var(--sidebar);border-right:1px solid var(--line);
+    position:sticky;top:0;height:100vh;overflow-y:auto;padding:22px 0;flex-shrink:0}
+  .sidebar h2{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--accent2);
+    padding:0 22px 10px;margin-top:14px}
+  .sidebar h2:first-child{margin-top:0}
+  .sidebar a{display:block;padding:8px 22px;color:var(--muted);text-decoration:none;
+    font-size:13.5px;border-left:3px solid transparent;transition:.15s}
+  .sidebar a:hover{background:var(--panel);color:var(--text)}
+  .sidebar a.active{border-left-color:var(--accent);color:var(--accent2);background:var(--panel)}
+  main{flex:1;max-width:940px;margin:0 auto;padding:40px 48px 90px}
+  .hero{background:linear-gradient(135deg,#16263f,#1b2f4d);border:1px solid var(--line);
+    border-radius:14px;padding:34px 36px;margin-bottom:34px}
+  .hero .tag{display:inline-block;background:var(--accent);color:#04121f;font-size:11px;
+    font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:.5px;text-transform:uppercase}
+  .hero h1{font-size:28px;margin:14px 0 8px;line-height:1.25}
+  .hero p{color:var(--muted);font-size:15px}
+  .meta{display:flex;gap:26px;flex-wrap:wrap;margin-top:18px;font-size:13px;color:var(--muted)}
+  .meta b{color:var(--accent2)}
+  section{margin-bottom:44px;scroll-margin-top:20px}
+  h2.step{font-size:22px;margin-bottom:6px;padding-bottom:12px;border-bottom:2px solid var(--accent);
+    display:inline-block}
+  .step-num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;
+    background:var(--accent);color:#04121f;border-radius:8px;font-weight:700;font-size:15px;margin-right:10px}
+  h3{font-size:17px;margin:22px 0 8px;color:var(--accent2)}
+  p{margin-bottom:12px;color:var(--text)}
+  .lead{color:var(--muted);margin-bottom:18px}
+  ul,ol{margin:0 0 14px 22px}
+  li{margin-bottom:7px}
+  .clicks{background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:16px 18px 16px 20px;margin:14px 0}
+  .clicks .lbl{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--accent2);
+    font-weight:700;margin-bottom:10px}
+  .clicks ol{margin:0 0 0 18px}
+  .clicks li{margin-bottom:8px}
+  .clicks code,p code,li code{background:#0b1526;color:var(--accent2);padding:2px 7px;
+    border-radius:5px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+  .codewrap{position:relative;margin:14px 0 20px}
+  .codewrap .head{display:flex;justify-content:space-between;align-items:center;
+    background:#122036;border:1px solid var(--line);border-bottom:none;
+    border-radius:10px 10px 0 0;padding:8px 14px;font-size:12px;color:var(--muted)}
+  .codewrap .head .fname{color:var(--accent2);font-family:monospace}
+  .copybtn{background:var(--accent);color:#04121f;border:none;padding:5px 14px;border-radius:6px;
+    font-size:12px;font-weight:700;cursor:pointer;transition:.15s}
+  .copybtn:hover{background:var(--accent2)}
+  .copybtn.done{background:var(--ok);color:#04121f}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:0 0 10px 10px;
+    padding:16px 18px;overflow-x:auto;margin:0}
+  pre code{font-family:'SF Mono',Consolas,'Courier New',monospace;font-size:13px;
+    line-height:1.6;color:#d6e4f0;background:none;padding:0}
+  .cm{color:#6b8299}
+  .kw{color:#ff9e64}
+  .st{color:#9ece6a}
+  .fn{color:#7dcfff}
+  .nu{color:#e0af68}
+  .note{border-left:4px solid var(--accent);background:rgba(0,180,216,.08);
+    padding:12px 16px;border-radius:0 8px 8px 0;margin:16px 0;font-size:14px}
+  .note.warn{border-left-color:var(--warn);background:rgba(245,166,35,.08)}
+  .note.esri{border-left-color:var(--esri);background:rgba(62,163,74,.10)}
+  .note b{color:var(--accent2)}
+  .note.warn b{color:var(--warn)}
+  .note.esri b{color:#7fce7f}
+  .prompt{background:#10233c;border:1px dashed var(--accent);border-radius:10px;
+    padding:14px 16px;margin:12px 0}
+  .prompt .plbl{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);
+    font-weight:700;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .prompt .ptext{font-family:monospace;font-size:13px;color:#d6e4f0;white-space:pre-wrap;line-height:1.55}
+  .pcopy{background:transparent;border:1px solid var(--accent);color:var(--accent);
+    padding:3px 10px;border-radius:5px;font-size:11px;cursor:pointer}
+  .pcopy:hover{background:var(--accent);color:#04121f}
+  .pcopy.done{background:var(--ok);border-color:var(--ok);color:#04121f}
+  .flow{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0;align-items:stretch}
+  .flow .node{flex:1;min-width:120px;background:var(--card);border:1px solid var(--line);
+    border-radius:10px;padding:14px 12px;text-align:center}
+  .flow .node .n{width:26px;height:26px;background:var(--accent);color:#04121f;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;margin:0 auto 8px}
+  .flow .node .t{font-size:13px;font-weight:600;color:var(--accent2)}
+  .flow .node .d{font-size:11.5px;color:var(--muted);margin-top:4px}
+  .flow .arrow{align-self:center;color:var(--accent);font-size:20px}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left}
+  th{background:var(--card);color:var(--accent2);font-weight:600}
+  td code{background:#0b1526;color:var(--accent2);padding:1px 6px;border-radius:4px}
+  .swatch{display:inline-block;width:14px;height:14px;border-radius:3px;
+    vertical-align:middle;margin-right:6px;border:1px solid rgba(255,255,255,.15)}
+  .badge{display:inline-block;font-size:11px;padding:2px 9px;border-radius:12px;
+    background:rgba(46,194,126,.15);color:var(--ok);font-weight:600;margin-left:8px}
+  .badge.qgis{background:rgba(88,171,80,.18);color:#8fce7f}
+  .badge.esri{background:rgba(62,163,74,.18);color:#8fce7f}
+  footer{border-top:1px solid var(--line);padding-top:22px;margin-top:40px;color:var(--muted);font-size:13px}
+  @media(max-width:900px){
+    .sidebar{display:none}
+    main{padding:24px 18px 60px}
+    .flow{flex-direction:column}
+    .flow .arrow{transform:rotate(90deg)}
+  }
+  .mobnav{display:none}
+  @media(max-width:900px){
+    .mobnav{display:block;position:sticky;top:0;z-index:20;background:var(--sidebar);
+      border-bottom:1px solid var(--line);padding:10px 16px}
+    .mobnav select{width:100%;background:var(--panel);color:var(--text);border:1px solid var(--line);
+      padding:9px;border-radius:8px;font-size:14px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav class="sidebar" id="sidebar">
+    <h2>Overview</h2>
+    <a href="#intro">Introduction</a>
+    <a href="#questions">Research Questions</a>
+    <a href="#workflow">Analysis Workflow</a>
+    <a href="#dataset">Esri Dataset &amp; Classes</a>
+    <a href="#prereq">Prerequisites</a>
+    <h2>Part A · GEE Code Editor</h2>
+    <a href="#step1">1 · Set Up Script</a>
+    <a href="#step2">2 · Add Kigali Boundary</a>
+    <a href="#step3">3 · Load Esri LULC Time Series</a>
+    <a href="#step4">4 · Per-Year Maps &amp; Colours</a>
+    <a href="#step5">5 · Area per Class per Year</a>
+    <a href="#step6">6 · Change Detection</a>
+    <a href="#step7">7 · Charts &amp; Graphs</a>
+    <a href="#step8">8 · Vectorise the Classes</a>
+    <a href="#step9">9 · Export Raster + Vector</a>
+    <a href="#step10">10 · App with Download Buttons</a>
+    <a href="#step11">11 · Publish the App</a>
+    <h2>Part B · QGIS Map Production</h2>
+    <a href="#qgis1">12 · Load &amp; Style in QGIS</a>
+    <a href="#qgis2">13 · Style Files (.qml / .sld)</a>
+    <a href="#qgis3">14 · Print Layout + North Arrow</a>
+    <a href="#qgis4">15 · Charts &amp; Graphs on the Map</a>
+    <h2>Reference</h2>
+    <a href="#capabilities">What GEE vs QGIS Can Do</a>
+    <a href="#interpret">Interpreting Results</a>
+    <a href="#prompts">AI Prompt Library</a>
+    <a href="#fullscript">Full Combined Script</a>
+    <a href="#refs">Sources &amp; Limits</a>
+  </nav>
+
+  <div style="flex:1">
+  <div class="mobnav">
+    <select onchange="location.href=this.value">
+      <option value="#intro">Jump to section…</option>
+      <option value="#questions">Research Questions</option>
+      <option value="#workflow">Analysis Workflow</option>
+      <option value="#dataset">Esri Dataset &amp; Classes</option>
+      <option value="#step1">1 · Set Up Script</option>
+      <option value="#step2">2 · Add Kigali Boundary</option>
+      <option value="#step3">3 · Load Esri LULC Time Series</option>
+      <option value="#step4">4 · Per-Year Maps &amp; Colours</option>
+      <option value="#step5">5 · Area per Class per Year</option>
+      <option value="#step6">6 · Change Detection</option>
+      <option value="#step7">7 · Charts &amp; Graphs</option>
+      <option value="#step8">8 · Vectorise the Classes</option>
+      <option value="#step9">9 · Export Raster + Vector</option>
+      <option value="#step10">10 · App with Download Buttons</option>
+      <option value="#step11">11 · Publish the App</option>
+      <option value="#qgis1">12 · Load &amp; Style in QGIS</option>
+      <option value="#qgis2">13 · Style Files (.qml / .sld)</option>
+      <option value="#qgis3">14 · Print Layout + North Arrow</option>
+      <option value="#qgis4">15 · Charts &amp; Graphs on the Map</option>
+      <option value="#capabilities">What GEE vs QGIS Can Do</option>
+      <option value="#interpret">Interpreting Results</option>
+      <option value="#prompts">AI Prompt Library</option>
+      <option value="#fullscript">Full Combined Script</option>
+      <option value="#refs">Sources &amp; Limits</option>
+    </select>
+  </div>
+
+  <main>
+
+    <!-- HERO -->
+    <div class="hero" id="intro">
+      <span class="tag">GEE + QGIS Research Practical</span>
+      <h1>Kigali City Land Use / Land Cover — Esri 10 m Sentinel-2 (2017 · 2021 · 2025)</h1>
+      <p>A step-by-step workflow to map and compare land cover across Kigali City for three years using the Esri / Impact Observatory 10 m annual land-cover time series in Google Earth Engine — with per-class area statistics, change detection, downloadable rasters and styled vector layers, an interactive app with download buttons, and a print-ready QGIS map complete with north arrow, legend and embedded charts.</p>
+      <div class="meta">
+        <span><b>Platform:</b> GEE Code Editor (JavaScript) + QGIS</span>
+        <span><b>Dataset:</b> Esri 10 m Annual LULC (Impact Observatory)</span>
+        <span><b>Resolution:</b> 10 m · Sentinel-2</span>
+        <span><b>AOI:</b> Kigali City (3 districts)</span>
+        <span><b>Years:</b> 2017, 2021, 2025</span>
+        <span><b>Output:</b> Maps · Charts · Raster + Vector · App · Print layout</span>
+      </div>
+    </div>
+
+    <!-- INTRO -->
+    <section>
+      <p class="lead">This session uses the <b>Esri 10 m Annual Land Cover</b> product, produced by Impact Observatory for Esri from ESA Sentinel-2 imagery. Each annual layer is a composite of deep-learning predictions across nine land-cover classes, giving a representative snapshot of the year with an assessed accuracy above 75 %. Because it is a consistent annual time series, it is well suited to multi-year comparison — here 2017, 2021 and 2025 — using one classification scheme throughout.</p>
+      <div class="note esri"><b>What you will build:</b> Esri land-cover maps for 2017, 2021 and 2025 clipped to Kigali City in the official Esri colours; per-class area tables and bar charts for each year; a class-transition change layer; class polygons vectorised and exported with their colours baked in; a published app titled <i>"Kigali Esri Land Cover Explorer"</i> with buttons that download the data; and a QGIS print layout with a north arrow, scale bar, legend and area chart for your report.</div>
+      <div class="note warn"><b>Academic honesty note:</b> This guide gives the complete method and reproducible code. It does <b>not</b> pre-fill result numbers (e.g. "built area grew by X km²"). You generate every figure by running the scripts on live data, then report what you actually observe. Not every requested feature lives in the same tool — the <a href="#capabilities" style="color:var(--accent2)">GEE vs QGIS capability table</a> is explicit about which platform produces the north arrow, the print layout and the styled vector download, so nothing here overstates what a single tool can do.</div>
+    </section>
+
+    <!-- RESEARCH QUESTIONS -->
+    <section id="questions">
+      <h2 class="step"><span class="step-num">Q</span>Research Questions &amp; Objectives</h2>
+      <p class="lead">The study is organised around four questions a land-cover time series can answer:</p>
+      <table>
+        <tr><th>#</th><th>Research question</th><th>How the workflow answers it</th></tr>
+        <tr><td>RQ1</td><td>What was the composition of land cover in Kigali City in 2017, 2021 and 2025?</td><td>Per-year Esri maps + area-per-class tables (Steps 4, 5)</td></tr>
+        <tr><td>RQ2</td><td>Which classes gained or lost the most area over the period?</td><td>Area comparison bar chart across years (Step 7)</td></tr>
+        <tr><td>RQ3</td><td>Where did land cover physically change, and from what to what?</td><td>Class-transition change layer (Step 6)</td></tr>
+        <tr><td>RQ4</td><td>How can the results be delivered as usable GIS data and a formal map?</td><td>Raster + vector export, app downloads, QGIS print layout (Steps 8–15)</td></tr>
+      </table>
+      <div class="note"><b>Objective statement (for your report):</b> <i>To map and quantify land use / land cover and its change across Kigali City for 2017, 2021 and 2025 using the Esri 10 m annual Sentinel-2 land-cover product in Google Earth Engine, and to deliver the results as downloadable raster and vector datasets and a cartographically complete map in QGIS.</i></div>
+    </section>
+
+    <!-- WORKFLOW -->
+    <section id="workflow">
+      <h2 class="step"><span class="step-num">&#x21A6;</span>LULC Analysis Workflow</h2>
+      <p class="lead">Every step below follows this logical pipeline.</p>
+      <div class="flow">
+        <div class="node"><div class="n">1</div><div class="t">Boundary</div><div class="d">Define Kigali AOI</div></div>
+        <div class="arrow">&#x2192;</div>
+        <div class="node"><div class="n">2</div><div class="t">Load TS</div><div class="d">Esri LULC 2017/21/25</div></div>
+        <div class="arrow">&#x2192;</div>
+        <div class="node"><div class="n">3</div><div class="t">Colour Maps</div><div class="d">Official Esri palette</div></div>
+        <div class="arrow">&#x2192;</div>
+        <div class="node"><div class="n">4</div><div class="t">Area Stats</div><div class="d">km&#x00B2; per class/year</div></div>
+      </div>
+      <div class="flow">
+        <div class="node"><div class="n">5</div><div class="t">Change</div><div class="d">From-to transitions</div></div>
+        <div class="arrow">&#x2192;</div>
+        <div class="node"><div class="n">6</div><div class="t">Vectorise</div><div class="d">Class polygons</div></div>
+        <div class="arrow">&#x2192;</div>
+        <div class="node"><div class="n">7</div><div class="t">Export / App</div><div class="d">Raster + vector + UI</div></div>
+        <div class="arrow">&#x2192;</div>
+        <div class="node"><div class="n">8</div><div class="t">QGIS</div><div class="d">Print · N arrow · charts</div></div>
+      </div>
+    </section>
+
+    <!-- DATASET & CLASSES -->
+    <section id="dataset">
+      <h2 class="step"><span class="step-num">DB</span>The Esri Dataset &amp; Its Classes</h2>
+      <p class="lead">The data is accessed in GEE through the awesome-gee-community-catalog, which hosts the Impact Observatory / Esri annual time series as one ImageCollection covering 2017 onward (2025 was added in 2026).</p>
+      <table>
+        <tr><th>Property</th><th>Value</th></tr>
+        <tr><td>GEE ImageCollection ID</td><td><code>projects/sat-io/open-datasets/landcover/ESRI_Global-LULC_10m_TS</code></td></tr>
+        <tr><td>Band</td><td><code>b1</code> (land-cover class code)</td></tr>
+        <tr><td>Resolution</td><td>10 m (Sentinel-2)</td></tr>
+        <tr><td>Years available</td><td>2017 – 2025 (one image per year)</td></tr>
+        <tr><td>Producer</td><td>Impact Observatory for Esri · © Esri · CC BY-4.0</td></tr>
+      </table>
+
+      <h3>Data source alternatives</h3>
+      <p>You have two ways to reach the same Esri product. This guide uses the GEE catalog route because it runs entirely in the cloud, but the ArcGIS ImageServer is the authoritative Esri endpoint:</p>
+      <table>
+        <tr><th>Route</th><th>Endpoint</th><th>Best for</th></tr>
+        <tr><td>GEE catalog <span class="badge esri">used here</span></td><td><code>projects/sat-io/open-datasets/landcover/ESRI_Global-LULC_10m_TS</code></td><td>Cloud analysis, area stats, export</td></tr>
+        <tr><td>Esri ArcGIS ImageServer</td><td><code>https://ic.imagery1.arcgis.com/arcgis/rest/services/Sentinel2_10m_LandCover/ImageServer</code></td><td>Streaming into ArcGIS / QGIS as a live service</td></tr>
+      </table>
+      <div class="note esri"><b>Using the ImageServer in QGIS:</b> The Esri endpoint can be added directly to QGIS as an <b>ArcGIS REST / Image service</b> layer (<b>Layer → Add Layer → Add ArcGIS REST Server Layer</b>, then paste the ImageServer URL). It streams the same land cover live, but — like any tiled service — you cannot run zonal area statistics on it or re-symbolise the raw class values as freely as a downloaded GeoTIFF. For analysis, export from GEE (Step 9); for a quick live backdrop, use the ImageServer.</div>
+
+      <h3>Esri land-cover classes &amp; official colours</h3>
+      <p>The product uses nine classes. The raw class <b>values are non-sequential</b> (1, 2, 4, 5, 7, 8, 9, 10, 11) — an intentional design that leaves room for sub-classes. These exact values and hex colours are what you apply in both GEE and QGIS so your maps match the official Esri styling.</p>
+      <table>
+        <tr><th>Value</th><th>Class</th><th>Colour (hex)</th></tr>
+        <tr><td>1</td><td>Water</td><td><span class="swatch" style="background:#1A5BAB"></span>#1A5BAB</td></tr>
+        <tr><td>2</td><td>Trees</td><td><span class="swatch" style="background:#358221"></span>#358221</td></tr>
+        <tr><td>4</td><td>Flooded Vegetation</td><td><span class="swatch" style="background:#87D19E"></span>#87D19E</td></tr>
+        <tr><td>5</td><td>Crops</td><td><span class="swatch" style="background:#FFDB5C"></span>#FFDB5C</td></tr>
+        <tr><td>7</td><td>Built Area</td><td><span class="swatch" style="background:#ED022A"></span>#ED022A</td></tr>
+        <tr><td>8</td><td>Bare Ground</td><td><span class="swatch" style="background:#EDE9E4"></span>#EDE9E4</td></tr>
+        <tr><td>9</td><td>Snow / Ice</td><td><span class="swatch" style="background:#F2FAFF"></span>#F2FAFF</td></tr>
+        <tr><td>10</td><td>Clouds</td><td><span class="swatch" style="background:#C8C8C8"></span>#C8C8C8</td></tr>
+        <tr><td>11</td><td>Rangeland</td><td><span class="swatch" style="background:#C6AD8D"></span>#C6AD8D</td></tr>
+      </table>
+      <div class="note"><b>Kigali City context:</b> Unlike the whole country, an urban AOI is dominated by <b>Built Area</b> (7) across the three central districts (Nyarugenge, Gasabo, Kicukiro), and this is the class most likely to expand across 2017→2025 as the city grows. Expect substantial <b>Crops</b> (5) and <b>Rangeland</b> (11) in the peri-urban fringe, <b>Trees</b> (2) on hills and wetland margins, and <b>Water</b> (1) / <b>Flooded Vegetation</b> (4) along the valley wetlands (e.g. Nyabugogo). Snow/Ice (9) is absent and Clouds (10) should be near zero in an annual composite.</div>
+      <div class="note warn"><b>Sparse values matter:</b> Because valid codes skip numbers (there is no 3 or 6), a naive palette of nine colours applied to <code>min:1,max:11</code> would mis-assign colours. This guide builds the palette against the true value list so every class shows its correct Esri colour — do not shorten it to a plain 1–11 ramp.</div>
+    </section>
+
+    <!-- PREREQ -->
+    <section id="prereq">
+      <h3>Prerequisites</h3>
+      <ul>
+        <li>A registered <b>Google Earth Engine</b> account with an associated Google Cloud project.</li>
+        <li>Access to <code>code.earthengine.google.com</code> in a browser (Chrome recommended) for Part A.</li>
+        <li><b>QGIS 3.28+</b> installed for Part B (print layout, north arrow, styled vector download).</li>
+        <li>Basic familiarity with the Code Editor panels (Scripts, Console, Inspector, Tasks, Map).</li>
+      </ul>
+    </section>
+
+    <!-- ================= PART A ================= -->
+
+    <!-- STEP 1 -->
+    <section id="step1">
+      <h2 class="step"><span class="step-num">1</span>Set Up a New Script</h2>
+      <p class="lead">Create a clean, named script in your GEE repository before writing code.</p>
+      <div class="clicks">
+        <div class="lbl">Click by click</div>
+        <ol>
+          <li>Go to <code>code.earthengine.google.com</code> and sign in.</li>
+          <li>In the <b>Scripts</b> panel (left), click <b>NEW</b> → <b>File</b>. Name it <code>kigali_esri_lulc</code>.</li>
+          <li>The empty file opens in the Code Editor.</li>
+          <li>Paste the header below and press <b>Run</b> (<kbd>Ctrl+Enter</kbd>).</li>
+        </ol>
+      </div>
+      <div class="codewrap">
+        <div class="head"><span class="fname">kigali_esri_lulc.js</span><button class="copybtn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm">// ============================================================</span>
+<span class="cm">// Kigali City LULC - Esri 10 m Sentinel-2 Land Cover (2017/2021/2025)</span>
+<span class="cm">// Impact Observatory / Esri annual time series</span>
+<span class="cm">// ============================================================</span>
+<span class="fn">print</span>(<span class="st">'Project initialised: Rwanda Esri LULC 2017/2021/2025'</span>);
+
+<span class="cm">// Study years (edit here to change the comparison)</span>
+<span class="kw">var</span> yearList = [<span class="nu">2017</span>, <span class="nu">2021</span>, <span class="nu">2025</span>];</code></pre>
+      </div>
+    </section>
+
+    <!-- STEP 2 -->
+    <section id="step2">
+      <h2 class="step"><span class="step-num">2</span>Add the Kigali City Boundary</h2>
+      <p class="lead">Define <b>Kigali City</b> as the Area of Interest. Because Kigali is a first-level administrative unit (a province-equivalent), we use GAUL <b>level-1</b> — not the level-0 country layer. Two options follow; Option B is recommended for a formal report.</p>
+
+      <h3>Option A — GAUL level-1 filter <span class="badge esri">Fastest</span></h3>
+      <p>Filter Rwanda's first-level units down to Kigali. GAUL's spelling for the city varies, so we match any name containing "Kigali" to stay robust.</p>
+      <div class="codewrap">
+        <div class="head"><span class="fname">Kigali City boundary (GAUL level-1)</span><button class="copybtn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm">// GAUL level-1 = provinces / city (Kigali is a province-equivalent)</span>
+<span class="kw">var</span> adm1 = ee.<span class="fn">FeatureCollection</span>(<span class="st">'FAO/GAUL/2015/level1'</span>);
+
+<span class="cm">// Keep Rwanda's units, then match any name containing "Kigali"</span>
+<span class="cm">// (GAUL stores it as "Ville de Kigali" / "Kigali City" depending on record)</span>
+<span class="kw">var</span> kigali = adm1
+  .<span class="fn">filter</span>(ee.Filter.<span class="fn">eq</span>(<span class="st">'ADM0_NAME'</span>, <span class="st">'Rwanda'</span>))
+  .<span class="fn">filter</span>(ee.Filter.<span class="fn">stringContains</span>(<span class="st">'ADM1_NAME'</span>, <span class="st">'Kigali'</span>));
+
+<span class="kw">var</span> aoi = kigali.<span class="fn">geometry</span>();
+
+<span class="fn">print</span>(<span class="st">'Kigali unit(s) matched:'</span>, kigali.<span class="fn">aggregate_array</span>(<span class="st">'ADM1_NAME'</span>));
+Map.<span class="fn">centerObject</span>(aoi, <span class="nu">10</span>);        <span class="cm">// zoom 10-11 suits a city</span>
+Map.<span class="fn">addLayer</span>(kigali, {color: <span class="st">'black'</span>, fillColor: <span class="st">'00000000'</span>}, <span class="st">'Kigali City'</span>);</code></pre>
+      </div>
+      <div class="note warn"><b>Check the print:</b> The Console line <code>Kigali unit(s) matched</code> should list exactly one name. If it is empty, the GAUL spelling differs — print all Rwanda unit names with <code>adm1.filter(ee.Filter.eq('ADM0_NAME','Rwanda')).aggregate_array('ADM1_NAME')</code> and copy the exact Kigali string into an <code>ee.Filter.eq</code>.</div>
+
+      <h3>Option B — Upload the official Kigali boundary <span class="badge">Recommended</span></h3>
+      <div class="clicks">
+        <div class="lbl">Click by click</div>
+        <ol>
+          <li>Obtain the Kigali City boundary shapefile from an authoritative source (NISR, RLMUA, or Kigali City administration). Keep <code>.shp .shx .dbf .prj</code> together.</li>
+          <li>In the Code Editor, <b>Assets</b> tab → <b>NEW</b> → <b>Shape files</b>. Select all four, set Asset ID to <code>kigali_boundary</code>, <b>UPLOAD</b>.</li>
+          <li>When the ingest finishes (Tasks tab), use the asset path below.</li>
+        </ol>
+      </div>
+      <div class="codewrap">
+        <div class="head"><span class="fname">Kigali City boundary (uploaded asset)</span><button class="copybtn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="kw">var</span> kigali = ee.<span class="fn">FeatureCollection</span>(<span class="st">'projects/your-project/assets/kigali_boundary'</span>);
+<span class="kw">var</span> aoi = kigali.<span class="fn">geometry</span>();
+Map.<span class="fn">centerObject</span>(aoi, <span class="nu">10</span>);
+Map.<span class="fn">addLayer</span>(kigali, {color: <span class="st">'black'</span>, fillColor: <span class="st">'00000000'</span>}, <span class="st">'Kigali City'</span>);</code></pre>
+      </div>
+      <div class="note"><b>Why upload:</b> Rwanda's administrative boundaries were reformed in 2006 and refined since; GAUL 2015 may not match the current legal Kigali City extent (three districts: Nyarugenge, Gasabo, Kicukiro). An official shapefile guarantees your AOI is the boundary your report needs to defend. Either way, defining <code>aoi</code> once lets every <code>.clip()</code>, <code>.reduceRegion()</code> and export reuse the same geometry.</div>
+    </section>
+
+    <!-- STEP 3 -->
+    <section id="step3">
+      <h2 class="step"><span class="step-num">3</span>Load the Esri LULC Time Series <span class="badge esri">Esri</span></h2>
+      <p class="lead">Load the Esri collection, then pull out one mosaicked image per study year. Each year is stored as an annual image; we filter by date and mosaic to a single layer per year.</p>
+      <div class="codewrap">
+        <div class="head"><span class="fname">Load Esri LULC &amp; build per-year images</span><button class="copybtn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm">// Esri / Impact Observatory 10 m annual land cover</span>
+<span class="kw">var</span> esri = ee.<span class="fn">ImageCollection</span>(
+  <span class="st">'projects/sat-io/open-datasets/landcover/ESRI_Global-LULC_10m_TS'</span>);
+
+<span class="cm">// Helper: get the single land-cover image for a given year, clipped to Kigali</span>
+<span class="kw">var</span> lulcForYear = <span class="kw">function</span>(y){
+  <span class="kw">var</span> start = ee.<span class="fn">Date</span>.<span class="fn">fromYMD</span>(y, <span class="nu">1</span>, <span class="nu">1</span>);
+  <span class="kw">var</span> end   = start.<span class="fn">advance</span>(<span class="nu">1</span>, <span class="st">'year'</span>);
+  <span class="kw">return</span> esri.<span class="fn">filterDate</span>(start, end)
+             .<span class="fn">mosaic</span>()
+             .<span class="fn">rename</span>(<span class="st">'lulc'</span>)
+             .<span class="fn">clip</span>(aoi)
+             .<span class="fn">set</span>(<span class="st">'year'</span>, y);
+};
+
+<span class="kw">var</span> lulc2017 = <span class="fn">lulcForYear</span>(<span class="nu">2017</span>);
+<span class="kw">var</span> lulc2021 = <span class="fn">lulcForYear</span>(<span class="nu">2021</span>);
+<span class="kw">var</span> lulc2025 = <span class="fn">lulcForYear</span>(<span class="nu">2025</span>);
+
+<span class="fn">print</span>(<span class="st">'Esri image bands:'</span>, lulc2017.<span class="fn">bandNames</span>());</code></pre>
+      </div>
+      <div class="note warn"><b>Band name check:</b> The Console will show the band renamed to <code>lulc</code>. If a raw call ever shows a different original band name (e.g. <code>b1</code>), the <code>.rename('lulc')</code> above normalises it so the rest of the script is stable. If a year returns an empty mosaic, confirm that year exists in the collection (2017–2025 at time of writing).</div>
+    </section>
+
+    <!-- STEP 4 -->
+    <section id="step4">
+      <h2 class="step"><span class="step-num">4</span>Display Each Year in the Official Esri Colours</h2>
+      <p class="lead">Apply the exact Esri class values and hex palette so the three maps look identical to the official product. Because class values are sparse, we pass the full value list and the matching colours.</p>
+      <div class="codewrap">
+        <div class="head"><span class="fname">Esri palette &amp; per-year layers</span><button class="copybtn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm">// Official Esri class values and colours (sparse values!)</span>
+<span class="kw">var</span> ESRI_VALUES  = [<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">4</span>, <span class="nu">5</span>, <span class="nu">7</span>, <span class="nu">8</span>, <span class="nu">9</span>, <span class="nu">10</span>, <span class="nu">11</span>];
+<span class="kw">var</span> ESRI_NAMES   = [<span class="st">'Water'</span>,<span class="st">'Trees'</span>,<span class="st">'Flooded Veg'</span>,<span class="st">'Crops'</span>,
+                    <span class="st">'Built Area'</span>,<span class="st">'Bare Ground'</span>,<span class="st">'Snow/Ice'</span>,<span class="st">'Clouds'</span>,<span class="st">'Rangeland'</span>];
+<span class="kw">var</span> ESRI_COLORS  = [<span class="st">'#1A5BAB'</span>,<span class="st">'#358221'</span>,<span class="st">'#87D19E'</span>,<span class="st">'#FFDB5C'</span>,
+                    <span class="st">'#ED022A'</span>,<span class="st">'#EDE9E4'</span>,<span class="st">'#F2FAFF'</span>,<span class="st">'#C8C8C8'</span>,<span class="st">'#C6AD8D'</span>];
+
+<span class="cm">// Because values are non-contiguous, remap them to 0..8 for a clean palette</span>
+<span class="kw">var</span> remapVis = <span class="kw">function</span>(img){
+  <span class="kw">return</span> img.<span class="fn">remap</span>(ESRI_VALUES, [<span class="nu">0</span>,<span class="nu">1</span>,<span class="nu">2</span>,<span class="nu">3</span>,<span class="nu">4</span>,<span class="nu">5</span>,<span class="nu">6</span>,<span class="nu">7</span>,<span class="nu">8</span>]);
+};
+
+<span class="kw">var</span> visParams = {min: <span class="nu">0</span>, max: <span class="nu">8</span>, palette: ESRI_COLORS};
+
+Map.<span class="fn">addLayer</span>(<span class="fn">remapVis</span>(lulc2017), visParams, <span class="st">'Esri LULC 2017'</span>);
+Map.<span class="fn">addLayer</span>(<span class="fn">remapVis</span>(lulc2021), visParams, <span class="st">'Esri LULC 2021'</span>, <span class="kw">false</span>);
+Map.<span class="fn">addLayer</span>(<span class="fn">remapVis</span>(lulc2025), visParams, <span class="st">'Esri LULC 2025'</span>);</code></pre>
+      </div>
+      <div class="note esri"><b>Why remap for display:</b> A palette in GEE maps colours evenly from <code>min</code> to <code>max</code>. With sparse values (1,2,4,5,…) a direct <code>min:1,max:11</code> ramp would spread nine colours over eleven slots and mis-colour classes. Remapping the valid values to a tight <code>0–8</code> range guarantees each Esri class gets its correct hex. The underlying analysis (area, change, vectors) still uses the <b>original</b> values — we only remap a copy for display.</div>
+    </section>
+
+    <!-- STEP 5 -->
+    <section id="step5">
+      <h2 class="step"><span class="step-num">5</span>Compute Area per Class, per Year</h2>
+      <p class="lead">Quantify each class in km². A grouped area reducer counts pixel area by class code in one pass — run it for each year.</p>
+      <div class="codewrap">
+        <div class="head"><span class="fname">Area per class (km&#x00B2;)</span><button class="copybtn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm">// Grouped area (km2) by class value for one LULC image</span>
+<span class="kw">var</span> areaByClass = <span class="kw">function</span>(img, yearLabel){
+  <span class="kw">var</span> areaImg = ee.Image.<span class="fn">pixelArea</span>().<span class="fn">divide</span>(<span class="nu">1e6</span>)
+                 .<span class="fn">addBands</span>(img.<span class="fn">rename</span>(<span class="st">'class'</span>));
+  <span class="kw">var</span> stats = areaImg.<span class="fn">reduceRegion</span>({
+    reducer: ee.Reducer.<span class="fn">sum</span>().<span class="fn">group</span>({groupField: <span class="nu">1</span>, groupName: <span class="st">'class'</span>}),
+    geometry: aoi, scale: <span class="nu">10</span>, maxPixels: <span class="nu">1e13</span>
+  });
+  <span class="fn">print</span>(<span class="st">'Area km2 by class - '</span> + yearLabel, stats);
+  <span class="kw">return</span> stats;
+};
+
+<span class="fn">areaByClass</span>(lulc2017, <span class="st">'2017'</span>);
+<span class="fn">areaByClass</span>(lulc2021, <span class="st">'2021'</span>);
+<span class="fn">areaByClass</span>(lulc2025, <span class="st">'2025'</span>);</code></pre>
+      </div>
+      <div class="note esri"><b>Kigali runs at full 10 m:</b> Because the AOI is a single city (~730 km², not the whole 26,000 km² country), <code>scale: 10</code> computes comfortably here — a major advantage of the smaller area. Keep <code>scale: 10</code> for the figures you report. Only raise it (30/100) if you later expand the AOI. State the scale in your methods either way.</div>
+    </section>
+
+    <!-- STEP 6 -->
+    <section id="step6">
+      <h2 class="step"><span class="step-num">6</span>Detect Land-Cover Change (From → To)</h2>
+      <p class="lead">Answer RQ3: where did land cover change, and what did it become? We combine two years into a single transition code, so each pixel records its <i>from</i> and <i>to</i> class.</p>
+      <div class="codewrap">
+        <div class="head"><span class="fname">Change: 2017 &#x2192; 2025 transition map</span><button class="copybtn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm">// Encode a from-to transition: (from * 100) + to</span>
+<span class="cm">// e.g. rangeland(11) -&gt; built(7) becomes 1107</span>
+<span class="kw">var</span> transition = lulc2017.<span class="fn">multiply</span>(<span class="nu">100</span>).<span class="fn">add</span>(lulc2025)
+                   .<span class="fn">rename</span>(<span class="st">'transition'</span>).<span class="fn">clip</span>(aoi);
+
+<span class="cm">// Simple "changed vs unchanged" mask (1 where class differs)</span>
+<span class="kw">var</span> changed = lulc2017.<span class="fn">neq</span>(lulc2025).<span class="fn">rename</span>(<span class="st">'changed'</span>).<span class="fn">clip</span>(aoi);
+
+Map.<span class="fn">addLayer</span>(changed.<span class="fn">selfMask</span>(),
+  {palette: [<span class="st">'#ff00ff'</span>]}, <span class="st">'Changed pixels 2017-2025'</span>, <span class="kw">false</span>);
+
+<span class="cm">// Focused example: new Built Area (became class 7, was not 7 before)</span>
+<span class="kw">var</span> newBuilt = lulc2017.<span class="fn">neq</span>(<span class="nu">7</span>).<span class="fn">and</span>(lulc2025.<span class="fn">eq</span>(<span class="nu">7</span>))
+                 .<span class="fn">selfMask</span>().<span class="fn">clip</span>(aoi);
+Map.<span class="fn">addLayer</span>(newBuilt, {palette: [<span class="st">'#ED022A'</span>]},
+  <span class="st">'New Built Area 2017-2025'</span>);</code></pre>
+      </div>
+      <div class="note"><b>Inspect it:</b> Use the <b>Inspector</b> on the transition layer — a value of <code>1107</code> means that pixel went from Rangeland (11) to Built Area (7). The "New Built Area" layer isolates urban expansion, the most policy-relevant change for a growing capital like Kigali.</div>
+      <div class="note warn"><b>Change vs uncertainty:</b> Some year-to-year differences are classification noise, not real change — especially between spectrally similar classes (Crops ↔ Rangeland). Treat isolated single-pixel changes with caution; trust clustered, spatially coherent change. Say so in your write-up.</div>
+    </section>
+
+    <!-- STEP 7 -->
+    <section id="step7">
+      <h2 class="step"><span class="step-num">7</span>Charts &amp; Graphs</h2>
+      <p class="lead">Turn the area statistics into charts. We build a per-year class bar chart and a grouped chart comparing all three years, both printed to the Console (and reused in the app in Step 10).</p>
+      <div class="codewrap">
+        <div class="head"><span class="fname">Area-by-class charts</span><button class="copybtn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm">// Build a FeatureCollection of {class, area, year} for charting</span>
+<span class="kw">var</span> classFC = <span class="kw">function</span>(img, y){
+  <span class="kw">var</span> areaImg = ee.Image.<span class="fn">pixelArea</span>().<span class="fn">divide</span>(<span class="nu">1e6</span>)
+                 .<span class="fn">addBands</span>(img.<span class="fn">rename</span>(<span class="st">'class'</span>));
+  <span class="kw">var</span> groups = ee.<span class="fn">List</span>(areaImg.<span class="fn">reduceRegion</span>({
+    reducer: ee.Reducer.<span class="fn">sum</span>().<span class="fn">group</span>({groupField:<span class="nu">1</span>, groupName:<span class="st">'class'</span>}),
+    geometry: aoi, scale: <span class="nu">30</span>, maxPixels: <span class="nu">1e13</span>
+  }).<span class="fn">get</span>(<span class="st">'groups'</span>));
+  <span class="kw">return</span> ee.<span class="fn">FeatureCollection</span>(groups.<span class="fn">map</span>(<span class="kw">function</span>(g){
+    g = ee.<span class="fn">Dictionary</span>(g);
+    <span class="kw">return</span> ee.<span class="fn">Feature</span>(<span class="kw">null</span>, {
+      'class': g.<span class="fn">get</span>(<span class="st">'class'</span>),
+      'area':  g.<span class="fn">get</span>(<span class="st">'sum'</span>),
+      'year':  y
+    });
+  }));
+};
+
+<span class="kw">var</span> fc2017 = <span class="fn">classFC</span>(lulc2017, <span class="nu">2017</span>);
+<span class="kw">var</span> fc2021 = <span class="fn">classFC</span>(lulc2021, <span class="nu">2021</span>);
+<span class="kw">var</span> fc2025 = <span class="fn">classFC</span>(lulc2025, <span class="nu">2025</span>);
+
+<span class="cm">// Single-year bar chart (2025)</span>
+<span class="kw">var</span> chart2025 = ui.Chart.feature.<span class="fn">byFeature</span>(fc2025, <span class="st">'class'</span>, <span class="st">'area'</span>)
+  .<span class="fn">setChartType</span>(<span class="st">'ColumnChart'</span>)
+  .<span class="fn">setOptions</span>({
+    title: <span class="st">'Land Cover Area by Class - Rwanda 2025'</span>,
+    hAxis: {title: <span class="st">'Esri class value'</span>},
+    vAxis: {title: <span class="st">'Area (km2)'</span>},
+    legend: {position: <span class="st">'none'</span>}, colors: [<span class="st">'#3ea34a'</span>]
+  });
+<span class="fn">print</span>(chart2025);
+
+<span class="cm">// Three-year comparison (merge, then column chart grouped by year)</span>
+<span class="kw">var</span> allYears = fc2017.<span class="fn">merge</span>(fc2021).<span class="fn">merge</span>(fc2025);
+<span class="kw">var</span> compareChart = ui.Chart.feature.<span class="fn">groups</span>(allYears, <span class="st">'class'</span>, <span class="st">'area'</span>, <span class="st">'year'</span>)
+  .<span class="fn">setChartType</span>(<span class="st">'ColumnChart'</span>)
+  .<span class="fn">setOptions</span>({
+    title: <span class="st">'Land Cover Area by Class - 2017 vs 2021 vs 2025'</span>,
+    hAxis: {title: <span class="st">'Esri class value'</span>},
+    vAxis: {title: <span class="st">'Area (km2)'</span>}, legend: {position: <span class="st">'top'</span>}
+  });
+<span class="fn">print</span>(compareChart);</code></pre>
+      </div>
+      <div class="note"><b>Read the charts:</b> The comparison chart is your core RQ2 evidence — each class shows three bars (2017, 2021, 2025) side by side so growth or loss is immediate. Export any chart via the camera icon (SVG/PNG) for your report. To label classes by name instead of value, add an Esri class-name dictionary and map it onto the x-axis.</div>
+    </section>
+
+    <!-- STEP 8 -->
+    <section id="step8">
+      <h2 class="step"><span class="step-num">8</span>Vectorise the Classes (with Colours) <span class="badge esri">Esri</span></h2>
+      <p class="lead">Convert the raster classes into polygons so you can export true vector data. Each polygon carries its class value, class name and Esri hex colour as attributes — so the colours travel with the vectors.</p>
+      <div class="codewrap">
+        <div class="head"><span class="fname">Raster &#x2192; coloured class polygons</span><button class="copybtn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm">// Vectorise the 2025 classes to polygons</span>
+<span class="cm">// reduceToVectors groups connected same-value pixels into features</span>
+<span class="kw">var</span> vectors2025 = lulc2025.<span class="fn">rename</span>(<span class="st">'class'</span>).<span class="fn">toInt</span>().<span class="fn">reduceToVectors</span>({
+  geometry: aoi,
+  scale: <span class="nu">10</span>,                 <span class="cm">// Kigali is small enough for full 10 m vectorising</span>
+  geometryType: <span class="st">'polygon'</span>,
+  eightConnected: <span class="kw">false</span>,
+  labelProperty: <span class="st">'class'</span>,
+  maxPixels: <span class="nu">1e13</span>
+});
+
+<span class="cm">// Attach class name + Esri hex colour to every polygon</span>
+<span class="kw">var</span> valueToName  = ee.<span class="fn">Dictionary</span>({
+  <span class="st">'1'</span>:<span class="st">'Water'</span>,<span class="st">'2'</span>:<span class="st">'Trees'</span>,<span class="st">'4'</span>:<span class="st">'Flooded Vegetation'</span>,<span class="st">'5'</span>:<span class="st">'Crops'</span>,
+  <span class="st">'7'</span>:<span class="st">'Built Area'</span>,<span class="st">'8'</span>:<span class="st">'Bare Ground'</span>,<span class="st">'9'</span>:<span class="st">'Snow/Ice'</span>,
+  <span class="st">'10'</span>:<span class="st">'Clouds'</span>,<span class="st">'11'</span>:<span class="st">'Rangeland'</span>
+});
+<span class="kw">var</span> valueToColor = ee.<span class="fn">Dictionary</span>({
+  <span class="st">'1'</span>:<span class="st">'#1A5BAB'</span>,<span class="st">'2'</span>:<span class="st">'#358221'</span>,<span class="st">'4'</span>:<span class="st">'#87D19E'</span>,<span class="st">'5'</span>:<span class="st">'#FFDB5C'</span>,
+  <span class="st">'7'</span>:<span class="st">'#ED022A'</span>,<span class="st">'8'</span>:<span class="st">'#EDE9E4'</span>,<span class="st">'9'</span>:<span class="st">'#F2FAFF'</span>,
+  <span class="st">'10'</span>:<span class="st">'#C8C8C8'</span>,<span class="st">'11'</span>:<span class="st">'#C6AD8D'</span>
+});
+
+vectors2025 = vectors2025.<span class="fn">map</span>(<span class="kw">function</span>(f){
+  <span class="kw">var</span> key = ee.<span class="fn">Number</span>(f.<span class="fn">get</span>(<span class="st">'class'</span>)).<span class="fn">format</span>(<span class="st">'%d'</span>);
+  <span class="kw">return</span> f.<span class="fn">set</span>({
+    'lc_name': valueToName.<span class="fn">get</span>(key, <span class="st">'Unknown'</span>),
+    'color':   valueToColor.<span class="fn">get</span>(key, <span class="st">'#000000'</span>)
+  });
+});
+
+<span class="cm">// Preview using the stored colour attribute</span>
+Map.<span class="fn">addLayer</span>(vectors2025.<span class="fn">style</span>({
+  styleProperty: <span class="st">'color'</span>, width: <span class="nu">1</span>
+}), {}, <span class="st">'Vectorised classes 2025'</span>, <span class="kw">false</span>);
+
+<span class="fn">print</span>(<span class="st">'Vector feature count (2025):'</span>, vectors2025.<span class="fn">size</span>());</code></pre>
+      </div>
+      <div class="note esri"><b>Colours in the vectors:</b> Each polygon gets a <code>color</code> attribute holding its Esri hex. In GEE the <code>.style({styleProperty:'color'})</code> call renders straight from that attribute, and in QGIS you can drive a categorised style from the same <code>lc_name</code>/<code>color</code> field — so your exported vectors keep the official palette wherever they are opened.</div>
+      <div class="note esri"><b>City-scale makes this easy:</b> Full 10 m vectorising of an entire country would create hundreds of thousands of polygons and time out — but Kigali City is small enough to vectorise at the native <code>scale: 10</code> directly. If you still hit a limit (very fragmented classes), raise to <code>scale: 20</code> or vectorise one class at a time, but for Kigali 10 m should complete.</div>
+    </section>
+
+    <!-- STEP 9 -->
+    <section id="step9">
+      <h2 class="step"><span class="step-num">9</span>Export Raster + Vector</h2>
+      <p class="lead">Export both the raster classes (for analysis and QGIS styling) and the coloured vectors (as Shapefile and GeoJSON). All exports go to Google Drive.</p>
+      <div class="codewrap">
+        <div class="head"><span class="fname">Export raster GeoTIFF + vector SHP/GeoJSON</span><button class="copybtn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm">// --- Raster: 2025 land cover as GeoTIFF (original class values) ---</span>
+Export.image.<span class="fn">toDrive</span>({
+  image: lulc2025.<span class="fn">toInt</span>(),
+  description: <span class="st">'Kigali_EsriLULC_2025'</span>,
+  folder: <span class="st">'earthengine'</span>,
+  fileNamePrefix: <span class="st">'kigali_esri_lulc_2025'</span>,
+  region: aoi, scale: <span class="nu">10</span>, crs: <span class="st">'EPSG:32735'</span>, maxPixels: <span class="nu">1e13</span>
+});
+<span class="cm">// Repeat for 2017 and 2021 by swapping the image + names</span>
+
+<span class="cm">// --- Vector: coloured class polygons as Shapefile ---</span>
+Export.table.<span class="fn">toDrive</span>({
+  collection: vectors2025,
+  description: <span class="st">'Kigali_EsriLULC_2025_vector_SHP'</span>,
+  folder: <span class="st">'earthengine'</span>,
+  fileNamePrefix: <span class="st">'kigali_esri_lulc_2025_vector'</span>,
+  fileFormat: <span class="st">'SHP'</span>
+});
+
+<span class="cm">// --- Vector: same polygons as GeoJSON (keeps hex colours as text) ---</span>
+Export.table.<span class="fn">toDrive</span>({
+  collection: vectors2025,
+  description: <span class="st">'Kigali_EsriLULC_2025_vector_GeoJSON'</span>,
+  folder: <span class="st">'earthengine'</span>,
+  fileNamePrefix: <span class="st">'kigali_esri_lulc_2025_vector'</span>,
+  fileFormat: <span class="st">'GeoJSON'</span>
+});</code></pre>
+      </div>
+      <div class="clicks">
+        <div class="lbl">Click by click</div>
+        <ol>
+          <li>Run the script. Open the <b>Tasks</b> tab (right panel) — one task per export appears.</li>
+          <li>Click <b>RUN</b> on each. Confirm the dialog → <b>RUN</b>.</li>
+          <li>Raster and vector files land in your Drive <code>earthengine</code> folder.</li>
+          <li>The Shapefile export produces the full set (<code>.shp .shx .dbf .prj</code>) plus a <code>.dbf</code> holding the <code>class</code>, <code>lc_name</code> and <code>color</code> attributes.</li>
+        </ol>
+      </div>
+      <div class="note warn"><b>Shapefile limits:</b> Shapefiles cap field names at 10 characters (<code>lc_name</code>, <code>color</code> are safe) and struggle with very large feature counts. If the vector is huge, prefer <b>GeoJSON</b> or <b>GeoPackage</b> (open the SHP in QGIS and re-save as <code>.gpkg</code>), which have no such limits and keep colours cleanly.</div>
+    </section>
+
+    <!-- STEP 10 -->
+    <section id="step10">
+      <h2 class="step"><span class="step-num">10</span>Build the App — with Download Buttons</h2>
+      <p class="lead">Assemble an Earth Engine App: a title panel, a legend in Esri colours, a year selector, an area chart, and buttons that generate direct download links for the raster and vector. This is how you give app users the ability to download the data.</p>
+      <div class="codewrap">
+        <div class="head"><span class="fname">App UI: legend, year switch, chart, downloads</span><button class="copybtn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm">// ---------- APP INTERFACE ----------</span>
+Map.<span class="fn">setControlVisibility</span>({layerList: <span class="kw">true</span>});
+<span class="kw">var</span> panel = ui.<span class="fn">Panel</span>({style: {width: <span class="st">'340px'</span>, padding: <span class="st">'12px'</span>}});
+panel.<span class="fn">add</span>(ui.<span class="fn">Label</span>(<span class="st">'Rwanda Esri Land Cover Explorer'</span>,
+  {fontSize: <span class="st">'20px'</span>, fontWeight: <span class="st">'bold'</span>, color: <span class="st">'#3ea34a'</span>}));
+panel.<span class="fn">add</span>(ui.<span class="fn">Label</span>(<span class="st">'Esri 10 m Sentinel-2 LULC | 2017 . 2021 . 2025'</span>,
+  {fontSize: <span class="st">'12px'</span>, color: <span class="st">'gray'</span>}));
+
+<span class="cm">// Legend in Esri colours</span>
+<span class="kw">var</span> legend = ui.<span class="fn">Panel</span>({style:{padding:<span class="st">'8px 0 0 0'</span>}});
+legend.<span class="fn">add</span>(ui.<span class="fn">Label</span>(<span class="st">'Classes'</span>, {fontWeight:<span class="st">'bold'</span>, fontSize:<span class="st">'13px'</span>}));
+<span class="kw">var</span> addLegend = <span class="kw">function</span>(color, name){
+  legend.<span class="fn">add</span>(ui.<span class="fn">Panel</span>([
+    ui.<span class="fn">Label</span>(<span class="st">''</span>, {backgroundColor: color, padding: <span class="st">'8px'</span>, margin: <span class="st">'0 6px 0 0'</span>,
+      border: <span class="st">'1px solid #999'</span>}),
+    ui.<span class="fn">Label</span>(name, {margin: <span class="st">'0'</span>, fontSize: <span class="st">'13px'</span>})
+  ], ui.Panel.Layout.<span class="fn">Flow</span>(<span class="st">'horizontal'</span>)));
+};
+<span class="fn">addLegend</span>(<span class="st">'#1A5BAB'</span>,<span class="st">'Water'</span>);        <span class="fn">addLegend</span>(<span class="st">'#358221'</span>,<span class="st">'Trees'</span>);
+<span class="fn">addLegend</span>(<span class="st">'#87D19E'</span>,<span class="st">'Flooded Veg'</span>);  <span class="fn">addLegend</span>(<span class="st">'#FFDB5C'</span>,<span class="st">'Crops'</span>);
+<span class="fn">addLegend</span>(<span class="st">'#ED022A'</span>,<span class="st">'Built Area'</span>);   <span class="fn">addLegend</span>(<span class="st">'#EDE9E4'</span>,<span class="st">'Bare Ground'</span>);
+<span class="fn">addLegend</span>(<span class="st">'#F2FAFF'</span>,<span class="st">'Snow/Ice'</span>);    <span class="fn">addLegend</span>(<span class="st">'#C8C8C8'</span>,<span class="st">'Clouds'</span>);
+<span class="fn">addLegend</span>(<span class="st">'#C6AD8D'</span>,<span class="st">'Rangeland'</span>);
+panel.<span class="fn">add</span>(legend);
+
+<span class="cm">// Year selector -&gt; swaps the visible layer</span>
+<span class="kw">var</span> images = {<span class="st">'2017'</span>: lulc2017, <span class="st">'2021'</span>: lulc2021, <span class="st">'2025'</span>: lulc2025};
+<span class="kw">var</span> selamt = ui.<span class="fn">Select</span>({
+  items: [<span class="st">'2017'</span>,<span class="st">'2021'</span>,<span class="st">'2025'</span>], value: <span class="st">'2025'</span>,
+  onChange: <span class="kw">function</span>(y){
+    Map.<span class="fn">layers</span>().<span class="fn">reset</span>();
+    Map.<span class="fn">addLayer</span>(<span class="fn">remapVis</span>(images[y]), visParams, <span class="st">'Esri LULC '</span> + y);
+    Map.<span class="fn">addLayer</span>(kigali, {color:<span class="st">'black'</span>, fillColor:<span class="st">'00000000'</span>}, <span class="st">'Boundary'</span>);
+  }
+});
+panel.<span class="fn">add</span>(ui.<span class="fn">Label</span>(<span class="st">'Select year:'</span>, {fontSize:<span class="st">'13px'</span>, margin:<span class="st">'10px 0 2px'</span>}));
+panel.<span class="fn">add</span>(selamt);
+
+<span class="cm">// Area chart inside the app</span>
+panel.<span class="fn">add</span>(chart2025);
+
+<span class="cm">// ---- DOWNLOAD BUTTONS ----</span>
+<span class="cm">// Raster download link (small AOI / coarse scale recommended for direct download)</span>
+<span class="kw">var</span> rasterBtn = ui.<span class="fn">Button</span>({
+  label: <span class="st">'Download 2025 raster (GeoTIFF)'</span>,
+  onClick: <span class="kw">function</span>(){
+    <span class="kw">var</span> url = lulc2025.<span class="fn">toInt</span>().<span class="fn">getDownloadURL</span>({
+      name: <span class="st">'kigali_esri_lulc_2025'</span>,
+      region: aoi, scale: <span class="nu">100</span>, crs: <span class="st">'EPSG:32735'</span>, filePerBand: <span class="kw">false</span>
+    });
+    print(<span class="st">'Raster download URL:'</span>, url);
+  }
+});
+<span class="cm">// Vector download link (GeoJSON keeps the colour attribute)</span>
+<span class="kw">var</span> vectorBtn = ui.<span class="fn">Button</span>({
+  label: <span class="st">'Download 2025 vectors (GeoJSON)'</span>,
+  onClick: <span class="kw">function</span>(){
+    <span class="kw">var</span> url = vectors2025.<span class="fn">getDownloadURL</span>({
+      format: <span class="st">'GeoJSON'</span>, filename: <span class="st">'kigali_esri_lulc_2025_vector'</span>
+    });
+    print(<span class="st">'Vector download URL:'</span>, url);
+  }
+});
+panel.<span class="fn">add</span>(ui.<span class="fn">Label</span>(<span class="st">'Download data:'</span>, {fontWeight:<span class="st">'bold'</span>, margin:<span class="st">'10px 0 2px'</span>}));
+panel.<span class="fn">add</span>(rasterBtn);
+panel.<span class="fn">add</span>(vectorBtn);
+
+ui.root.<span class="fn">add</span>(panel);</code></pre>
+      </div>
+      <div class="note esri"><b>How the download works:</b> <code>getDownloadURL</code> generates a direct link the user clicks to save the file. For a full-country 10 m raster this link can exceed the direct-download size limit, so the button uses a coarser <code>scale: 100</code> for a quick grab; for the full-resolution product, direct users to the <code>Export.image.toDrive</code> route (Step 9). Vectors download cleanly as GeoJSON with the <code>lc_name</code> and <code>color</code> attributes intact.</div>
+      <div class="note warn"><b>Honest limit:</b> A published Earth Engine App shows the map, legend, chart and buttons, but it <b>cannot</b> draw a north arrow or a formal scale-and-title print layout — those are cartographic layout features that live in QGIS (Part B). The app is your interactive explorer; QGIS is your map-production studio.</div>
+    </section>
+
+    <!-- STEP 11 -->
+    <section id="step11">
+      <h2 class="step"><span class="step-num">11</span>Publish the App</h2>
+      <p class="lead">Host the app so anyone with the link can explore and download — no Earth Engine account required.</p>
+      <div class="clicks">
+        <div class="lbl">Click by click</div>
+        <ol>
+          <li>With the app script open, click <b>Apps</b> at the top of the Code Editor.</li>
+          <li>In <b>Manage Apps</b>, click <b>NEW APP</b>.</li>
+          <li>Enter an <b>App Name</b>: <code>kigali-esri-land-cover</code>.</li>
+          <li>Select or register a <b>Google Cloud Project</b> to host it.</li>
+          <li>Under <b>Source Code</b>, choose <b>Current contents of editor</b>.</li>
+          <li>Leave defaults → <b>PUBLISH</b>. After a few minutes the live URL is ready to share.</li>
+        </ol>
+      </div>
+      <div class="note"><b>Result:</b> A public link such as <code>https://your-username.users.earthengine.app/view/kigali-esri-land-cover</code> with the year selector, Esri-coloured legend, area chart and download buttons.</div>
+    </section>
+
+    <!-- ================= PART B: QGIS ================= -->
+
+    <!-- STEP 12 -->
+    <section id="qgis1">
+      <h2 class="step"><span class="step-num">12</span>Load &amp; Style the Data in QGIS <span class="badge qgis">QGIS</span></h2>
+      <p class="lead">Bring your exported GeoTIFFs and vectors into QGIS. This is where the north arrow, scale bar, formal legend and print layout come from — features a web app cannot provide.</p>
+      <div class="clicks">
+        <div class="lbl">Click by click — load</div>
+        <ol>
+          <li>Download the GeoTIFFs and the vector Shapefile/GeoJSON from your Drive <code>earthengine</code> folder.</li>
+          <li>In QGIS, drag each <code>.tif</code> and the vector onto the map, or use <b>Layer → Add Layer → Add Raster / Vector Layer</b>.</li>
+          <li>They load in EPSG:32735 (as exported). Set the project CRS to match: <b>Project → Properties → CRS</b>.</li>
+          <li>Optional live backdrop: <b>Layer → Add Layer → Add ArcGIS REST Server Layer</b>, paste <code>https://ic.imagery1.arcgis.com/arcgis/rest/services/Sentinel2_10m_LandCover/ImageServer</code> to stream the Esri service.</li>
+        </ol>
+      </div>
+      <div class="clicks">
+        <div class="lbl">Click by click — style the raster in Esri colours</div>
+        <ol>
+          <li>Right-click the land-cover raster → <b>Properties</b> → <b>Symbology</b>.</li>
+          <li>Set <b>Render type</b> to <b>Paletted/Unique values</b>.</li>
+          <li>Click <b>Classify</b> — QGIS lists the class values (1,2,4,5,7,8,9,10,11).</li>
+          <li>Double-click each colour swatch and set the exact Esri hex from the class table (e.g. Built Area → <code>#ED022A</code>). Label each with its class name.</li>
+          <li><b>Apply</b> → <b>OK</b>. Or skip all of this by loading a <code>.qml</code> style file (next step), which sets values, colours and labels in one click.</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- STEP 13 -->
+    <section id="qgis2">
+      <h2 class="step"><span class="step-num">13</span>One-Click Style Files (.qml / .sld) <span class="badge qgis">QGIS</span></h2>
+      <p class="lead">Instead of colouring classes by hand, save these ready-made QGIS style files and apply them. The <code>.qml</code> styles the <b>raster</b> classes; use a categorised style on the vector's <code>lc_name</code> field for the polygons.</p>
+      <div class="codewrap">
+        <div class="head"><span class="fname">kigali_esri_lulc.qml — raster paletted style</span><button class="copybtn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code>&lt;!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'&gt;
+&lt;qgis version=<span class="st">"3.28"</span>&gt;
+  &lt;pipe&gt;
+    &lt;rasterrenderer type=<span class="st">"paletted"</span> band=<span class="st">"1"</span> opacity=<span class="st">"1"</span>&gt;
+      &lt;colorPalette&gt;
+        &lt;paletteEntry value=<span class="st">"1"</span>  color=<span class="st">"#1A5BAB"</span> label=<span class="st">"Water"</span>/&gt;
+        &lt;paletteEntry value=<span class="st">"2"</span>  color=<span class="st">"#358221"</span> label=<span class="st">"Trees"</span>/&gt;
+        &lt;paletteEntry value=<span class="st">"4"</span>  color=<span class="st">"#87D19E"</span> label=<span class="st">"Flooded Vegetation"</span>/&gt;
+        &lt;paletteEntry value=<span class="st">"5"</span>  color=<span class="st">"#FFDB5C"</span> label=<span class="st">"Crops"</span>/&gt;
+        &lt;paletteEntry value=<span class="st">"7"</span>  color=<span class="st">"#ED022A"</span> label=<span class="st">"Built Area"</span>/&gt;
+        &lt;paletteEntry value=<span class="st">"8"</span>  color=<span class="st">"#EDE9E4"</span> label=<span class="st">"Bare Ground"</span>/&gt;
+        &lt;paletteEntry value=<span class="st">"9"</span>  color=<span class="st">"#F2FAFF"</span> label=<span class="st">"Snow/Ice"</span>/&gt;
+        &lt;paletteEntry value=<span class="st">"10"</span> color=<span class="st">"#C8C8C8"</span> label=<span class="st">"Clouds"</span>/&gt;
+        &lt;paletteEntry value=<span class="st">"11"</span> color=<span class="st">"#C6AD8D"</span> label=<span class="st">"Rangeland"</span>/&gt;
+      &lt;/colorPalette&gt;
+    &lt;/rasterrenderer&gt;
+  &lt;/pipe&gt;
+&lt;/qgis&gt;</code></pre>
+      </div>
+      <div class="clicks">
+        <div class="lbl">Click by click — apply a style file</div>
+        <ol>
+          <li>Save the block above as <code>kigali_esri_lulc.qml</code> in the same folder as your raster.</li>
+          <li>Right-click the raster → <b>Properties</b> → <b>Symbology</b> → <b>Style</b> (bottom) → <b>Load Style…</b> → pick the <code>.qml</code>.</li>
+          <li><b>Apply</b>. All nine classes snap to their Esri colours and labels instantly.</li>
+          <li>For the <b>vector</b>: Properties → <b>Symbology</b> → <b>Categorized</b> → <b>Value</b> = <code>lc_name</code> → <b>Classify</b>, then set each category's colour (or use the <code>color</code> field via <b>Data-defined override</b> on the fill).</li>
+        </ol>
+      </div>
+      <div class="note esri"><b>Colours that travel:</b> Between the raster <code>.qml</code> and the vector's <code>lc_name</code>/<code>color</code> attributes, your Esri palette is reproducible anywhere — you never have to re-pick the nine colours by memory again. Save the vector style too via <b>Save Style… → QGIS QML</b> for reuse.</div>
+    </section>
+
+    <!-- STEP 14 -->
+    <section id="qgis3">
+      <h2 class="step"><span class="step-num">14</span>Print Layout — North Arrow, Scale Bar, Legend <span class="badge qgis">QGIS</span></h2>
+      <p class="lead">This is the deliverable a report needs: a composed map with a north arrow, scale bar, title and legend. QGIS Print Layout is the tool that produces it.</p>
+      <div class="clicks">
+        <div class="lbl">Click by click — build the layout</div>
+        <ol>
+          <li>Style your land-cover layer and add the Kigali City boundary on top.</li>
+          <li><b>Project → New Print Layout</b>. Name it <code>Kigali LULC 2025</code>.</li>
+          <li><b>Add Item → Add Map</b>, then drag a rectangle to place the map frame. Pan/zoom via <b>Item Properties → set scale</b>.</li>
+          <li><b>Add Item → Add North Arrow</b>, draw it in a corner. Pick an arrow style in <b>Item Properties</b>. (It auto-orients to the map's north.)</li>
+          <li><b>Add Item → Add Scale Bar</b>; set <b>Units</b> to kilometres and style to match.</li>
+          <li><b>Add Item → Add Legend</b>; it reads your Esri class colours and labels automatically. Untick <b>Auto update</b> to hand-edit entries.</li>
+          <li><b>Add Item → Add Label</b> for the title (e.g. <i>"Kigali City Land Cover 2025 — Esri 10 m Sentinel-2"</i>) and a second label for the data source / date.</li>
+          <li><b>Layout → Export as Image / PDF / SVG</b> for your report.</li>
+        </ol>
+      </div>
+      <div class="note"><b>Multi-year figure:</b> To show 2017, 2021 and 2025 side by side, add three map frames to one layout, each locked to a different layer via <b>Item Properties → Layers → Lock layers</b>. One north arrow, one scale bar and a shared legend serve all three panels — a clean change-over-time figure.</div>
+    </section>
+
+    <!-- STEP 15 -->
+    <section id="qgis4">
+      <h2 class="step"><span class="step-num">15</span>Put Charts &amp; Graphs on the Map <span class="badge qgis">QGIS</span></h2>
+      <p class="lead">You asked for graphs <i>in</i> the map. There are two clean ways to do this in QGIS — a chart embedded in the print layout, or live diagrams drawn on the features themselves.</p>
+      <h3>Option A — Chart picture in the Print Layout <span class="badge">Simplest</span></h3>
+      <div class="clicks">
+        <div class="lbl">Click by click</div>
+        <ol>
+          <li>Export your area-by-class chart from GEE (Step 7, camera icon → PNG/SVG), or make one in a spreadsheet from the exported area table.</li>
+          <li>In the Print Layout: <b>Add Item → Add Picture</b> → browse to the chart image.</li>
+          <li>Position it beside the map frame; resize as needed. It prints as part of the composed map.</li>
+        </ol>
+      </div>
+      <h3>Option B — Diagrams drawn on features (data-driven)</h3>
+      <div class="clicks">
+        <div class="lbl">Click by click</div>
+        <ol>
+          <li>Load a polygon layer with per-feature numeric fields — e.g. district boundaries joined to a table of class areas per district (compute district areas in GEE with <code>reduceRegions</code>).</li>
+          <li>Layer <b>Properties → Diagrams</b> → enable <b>Pie chart</b> or <b>Bar chart</b>.</li>
+          <li>Add the class-area attributes as diagram categories and give each the matching Esri colour.</li>
+          <li>Each district now shows a live pie/bar of its land-cover mix, directly on the map. Add this layer to the Print Layout as usual.</li>
+        </ol>
+      </div>
+      <div class="note esri"><b>Which to use:</b> Option A is fastest for a single national chart next to the map. Option B is the stronger analytical figure — a per-district pie chart of land-cover composition reads as a proper thematic map and pairs naturally with your change results. Both live only in QGIS, not in the GEE app.</div>
+    </section>
+
+    <!-- CAPABILITIES -->
+    <section id="capabilities">
+      <h2 class="step"><span class="step-num">i</span>What GEE Does vs What QGIS Does</h2>
+      <p class="lead">To keep expectations honest, here is exactly which platform delivers each feature you asked for. Nothing in this guide claims a tool can do something it cannot.</p>
+      <table>
+        <tr><th>Feature</th><th>GEE Code Editor / App</th><th>QGIS</th></tr>
+        <tr><td>Load Esri LULC, compute area, detect change</td><td><b>Yes</b> — cloud analysis</td><td>Limited (needs downloaded raster)</td></tr>
+        <tr><td>Interactive web app, year selector, legend</td><td><b>Yes</b></td><td>No (desktop, not web)</td></tr>
+        <tr><td>Download raster / vector from an app button</td><td><b>Yes</b> — <code>getDownloadURL</code> / Export</td><td>N/A</td></tr>
+        <tr><td>Charts in a side panel</td><td><b>Yes</b> — <code>ui.Chart</code></td><td>Yes (layout picture / diagrams)</td></tr>
+        <tr><td>Vector layers with colours baked in</td><td><b>Yes</b> — <code>reduceToVectors</code> + attributes</td><td><b>Yes</b> — categorised style, <code>.qml</code></td></tr>
+        <tr><td>North arrow</td><td>No</td><td><b>Yes</b> — Print Layout</td></tr>
+        <tr><td>Scale bar, formal legend, title block</td><td>No</td><td><b>Yes</b> — Print Layout</td></tr>
+        <tr><td>Graphs drawn on the map / per feature</td><td>No (side panel only)</td><td><b>Yes</b> — Diagrams</td></tr>
+        <tr><td>Print / export a composed map (PDF/SVG)</td><td>No</td><td><b>Yes</b> — Print Layout</td></tr>
+      </table>
+      <div class="note"><b>The clean division:</b> Use <b>GEE</b> to analyse, chart and export the data and to publish the interactive downloadable app. Use <b>QGIS</b> to turn the exported data into a cartographically complete, printable map with a north arrow, scale bar, legend and on-map graphs. Together they cover every item in your request.</div>
+    </section>
+
+    <!-- INTERPRETATION -->
+    <section id="interpret">
+      <h2 class="step"><span class="step-num">R</span>Interpreting &amp; Reporting Results</h2>
+      <p class="lead">Build your Results section from the outputs you generate. Fill each cell with your own values.</p>
+      <table>
+        <tr><th>Output</th><th>What to record</th><th>Source</th></tr>
+        <tr><td>Area tables (2017/21/25)</td><td>km² and % of each class per year; dominant classes</td><td>Step 5 Console</td></tr>
+        <tr><td>Comparison chart</td><td>Which classes grew / shrank most across the period</td><td>Step 7 chart</td></tr>
+        <tr><td>Change / New Built layer</td><td>Where urban expansion clustered; from-to transitions</td><td>Step 6 map + Inspector</td></tr>
+        <tr><td>Vector polygons</td><td>Class polygon counts; any district focus</td><td>Step 8 export</td></tr>
+        <tr><td>Print map</td><td>Final cartographic figure(s) for the report</td><td>Steps 14–15 QGIS</td></tr>
+      </table>
+      <div class="note warn"><b>Be honest about limits:</b> Report the <code>scale</code> used for area (10 m vs coarser), flag that thin single-pixel "change" may be classification noise, and note the product's ~75 % accuracy. Distinguish real, spatially coherent land-cover change (e.g. Kigali's built-up expansion along its arteries) from year-to-year classifier variability between similar classes.</div>
+    </section>
+
+    <!-- PROMPTS -->
+    <section id="prompts">
+      <h2 class="step"><span class="step-num">AI</span>Prompt Library</h2>
+      <p class="lead">Use these with an AI assistant to generate or debug each block. Always review and test before running.</p>
+
+      <div class="prompt">
+        <div class="plbl"><span>Prompt · Boundary</span><button class="pcopy" onclick="copyPrompt(this)">Copy</button></div>
+        <div class="ptext">Write a Google Earth Engine JavaScript snippet that loads FAO GAUL level-0 boundaries, filters to Rwanda, extracts the geometry as an area of interest, centers the map at zoom 10, and adds the boundary with a black outline and transparent fill. Use GAUL level-1 filtered to Rwanda and to the unit whose name contains "Kigali".</div>
+      </div>
+
+      <div class="prompt">
+        <div class="plbl"><span>Prompt · Load Esri LULC</span><button class="pcopy" onclick="copyPrompt(this)">Copy</button></div>
+        <div class="ptext">Write Google Earth Engine code that loads the ImageCollection projects/sat-io/open-datasets/landcover/ESRI_Global-LULC_10m_TS and, with a reusable function, returns the single land-cover image for a given year by filtering to that year, mosaicking, renaming the band to lulc, and clipping to a Kigali City area of interest. Build images for 2017, 2021 and 2025.</div>
+      </div>
+
+      <div class="prompt">
+        <div class="plbl"><span>Prompt · Esri Palette</span><button class="pcopy" onclick="copyPrompt(this)">Copy</button></div>
+        <div class="ptext">Write Google Earth Engine code that displays an Esri land-cover image using the official class values 1,2,4,5,7,8,9,10,11 and hex colours #1A5BAB,#358221,#87D19E,#FFDB5C,#ED022A,#EDE9E4,#F2FAFF,#C8C8C8,#C6AD8D. Because the values are non-contiguous, remap them to 0..8 for display and apply the palette with min 0 and max 8.</div>
+      </div>
+
+      <div class="prompt">
+        <div class="plbl"><span>Prompt · Area per Class</span><button class="pcopy" onclick="copyPrompt(this)">Copy</button></div>
+        <div class="ptext">Write Google Earth Engine code that computes the area in square kilometres of each land-cover class over Kigali City for a given classified image, using ee.Image.pixelArea, a grouped sum reducer keyed on the class band at 10 metre scale, and prints the result. Make it a function and call it for 2017, 2021 and 2025.</div>
+      </div>
+
+      <div class="prompt">
+        <div class="plbl"><span>Prompt · Change Detection</span><button class="pcopy" onclick="copyPrompt(this)">Copy</button></div>
+        <div class="ptext">Write Google Earth Engine code that builds a from-to transition image from two Esri land-cover years by computing (from * 100 + to), a binary changed-pixel mask where the classes differ, and a layer isolating pixels that became Built Area (class 7) but were not Built Area before. Add all three to the map.</div>
+      </div>
+
+      <div class="prompt">
+        <div class="plbl"><span>Prompt · Comparison Chart</span><button class="pcopy" onclick="copyPrompt(this)">Copy</button></div>
+        <div class="ptext">Write Google Earth Engine code that builds per-year FeatureCollections of class and area for 2017, 2021 and 2025 using a grouped area reducer, merges them, and creates a grouped column chart with ui.Chart.feature.groups comparing area by class across the three years. Print the chart.</div>
+      </div>
+
+      <div class="prompt">
+        <div class="plbl"><span>Prompt · Vectorise with Colours</span><button class="pcopy" onclick="copyPrompt(this)">Copy</button></div>
+        <div class="ptext">Write Google Earth Engine code that vectorises an Esri land-cover image to polygons with reduceToVectors keyed on the class value, then attaches a class-name attribute and an Esri hex colour attribute to every polygon using dictionaries, and previews it with feature styling driven by the colour attribute.</div>
+      </div>
+
+      <div class="prompt">
+        <div class="plbl"><span>Prompt · Export Raster + Vector</span><button class="pcopy" onclick="copyPrompt(this)">Copy</button></div>
+        <div class="ptext">Write Google Earth Engine Export calls that export an Esri land-cover raster to Drive as a GeoTIFF at 10 metre scale in EPSG:32735, and export a coloured class-polygon FeatureCollection to Drive both as a Shapefile and as GeoJSON, all clipped to Kigali City with maxPixels 1e13.</div>
+      </div>
+
+      <div class="prompt">
+        <div class="plbl"><span>Prompt · App with Downloads</span><button class="pcopy" onclick="copyPrompt(this)">Copy</button></div>
+        <div class="ptext">Write Google Earth Engine User Interface code for an app titled "Kigali Esri Land Cover Explorer" with a legend in the Esri class colours, a year selector that swaps the visible layer among 2017/2021/2025, an area chart, and two buttons that generate download URLs — one for the raster via getDownloadURL and one for the class vectors as GeoJSON.</div>
+      </div>
+
+      <div class="prompt">
+        <div class="plbl"><span>Prompt · QGIS Style File</span><button class="pcopy" onclick="copyPrompt(this)">Copy</button></div>
+        <div class="ptext">Write a QGIS paletted raster style (.qml) for a land-cover raster with class values 1,2,4,5,7,8,9,10,11 mapped to the Esri colours #1A5BAB,#358221,#87D19E,#FFDB5C,#ED022A,#EDE9E4,#F2FAFF,#C8C8C8,#C6AD8D and labelled Water, Trees, Flooded Vegetation, Crops, Built Area, Bare Ground, Snow/Ice, Clouds, Rangeland.</div>
+      </div>
+
+      <div class="prompt">
+        <div class="plbl"><span>Prompt · QGIS Print Layout</span><button class="pcopy" onclick="copyPrompt(this)">Copy</button></div>
+        <div class="ptext">Explain step by step how to build a QGIS Print Layout for a Kigali City land-cover map that includes a map frame, a north arrow, a scale bar in kilometres, an automatic legend reading the layer's class colours, a title label and a data-source label, then export it as a PDF.</div>
+      </div>
+
+      <div class="prompt">
+        <div class="plbl"><span>Prompt · Debugging</span><button class="pcopy" onclick="copyPrompt(this)">Copy</button></div>
+        <div class="ptext">I am getting the following error in the Google Earth Engine Code Editor: [paste the exact error message]. Here is my code: [paste your code]. Explain what is causing the error and give me the corrected code.</div>
+      </div>
+    </section>
+
+    <!-- FULL SCRIPT -->
+    <section id="fullscript">
+      <h2 class="step"><span class="step-num">&#x2713;</span>Full Combined Script</h2>
+      <p class="lead">The complete, ready-to-run GEE script combining every step. Paste into a single Code Editor file to run the whole analysis and launch the app.</p>
+      <div class="codewrap">
+        <div class="head"><span class="fname">kigali_esri_lulc_full.js</span><button class="copybtn" onclick="copyCode(this)">Copy Full Script</button></div>
+        <pre><code><span class="cm">// ============================================================</span>
+<span class="cm">// RWANDA LULC - ESRI 10 m SENTINEL-2 LAND COVER (2017/2021/2025)</span>
+<span class="cm">// Maps + Area + Change + Vectors + Export + App w/ downloads</span>
+<span class="cm">// ============================================================</span>
+
+<span class="cm">// --- 1. Boundary: Kigali City (GAUL level-1; swap for uploaded asset) ---</span>
+<span class="kw">var</span> adm1 = ee.<span class="fn">FeatureCollection</span>(<span class="st">'FAO/GAUL/2015/level1'</span>);
+<span class="kw">var</span> kigali = adm1
+  .<span class="fn">filter</span>(ee.Filter.<span class="fn">eq</span>(<span class="st">'ADM0_NAME'</span>, <span class="st">'Rwanda'</span>))
+  .<span class="fn">filter</span>(ee.Filter.<span class="fn">stringContains</span>(<span class="st">'ADM1_NAME'</span>, <span class="st">'Kigali'</span>));
+<span class="kw">var</span> aoi = kigali.<span class="fn">geometry</span>();
+Map.<span class="fn">centerObject</span>(aoi, <span class="nu">10</span>);
+Map.<span class="fn">addLayer</span>(kigali, {color:<span class="st">'black'</span>, fillColor:<span class="st">'00000000'</span>}, <span class="st">'Kigali City'</span>);
+
+<span class="cm">// --- 2. Esri LULC time series -&gt; per-year images ---</span>
+<span class="kw">var</span> esri = ee.<span class="fn">ImageCollection</span>(<span class="st">'projects/sat-io/open-datasets/landcover/ESRI_Global-LULC_10m_TS'</span>);
+<span class="kw">var</span> lulcForYear = <span class="kw">function</span>(y){
+  <span class="kw">var</span> s = ee.<span class="fn">Date</span>.<span class="fn">fromYMD</span>(y,<span class="nu">1</span>,<span class="nu">1</span>), e = s.<span class="fn">advance</span>(<span class="nu">1</span>,<span class="st">'year'</span>);
+  <span class="kw">return</span> esri.<span class="fn">filterDate</span>(s,e).<span class="fn">mosaic</span>().<span class="fn">rename</span>(<span class="st">'lulc'</span>).<span class="fn">clip</span>(aoi).<span class="fn">set</span>(<span class="st">'year'</span>,y);
+};
+<span class="kw">var</span> lulc2017 = <span class="fn">lulcForYear</span>(<span class="nu">2017</span>);
+<span class="kw">var</span> lulc2021 = <span class="fn">lulcForYear</span>(<span class="nu">2021</span>);
+<span class="kw">var</span> lulc2025 = <span class="fn">lulcForYear</span>(<span class="nu">2025</span>);
+
+<span class="cm">// --- 3. Esri palette (sparse values -&gt; remap for display) ---</span>
+<span class="kw">var</span> ESRI_VALUES = [<span class="nu">1</span>,<span class="nu">2</span>,<span class="nu">4</span>,<span class="nu">5</span>,<span class="nu">7</span>,<span class="nu">8</span>,<span class="nu">9</span>,<span class="nu">10</span>,<span class="nu">11</span>];
+<span class="kw">var</span> ESRI_COLORS = [<span class="st">'#1A5BAB'</span>,<span class="st">'#358221'</span>,<span class="st">'#87D19E'</span>,<span class="st">'#FFDB5C'</span>,<span class="st">'#ED022A'</span>,<span class="st">'#EDE9E4'</span>,<span class="st">'#F2FAFF'</span>,<span class="st">'#C8C8C8'</span>,<span class="st">'#C6AD8D'</span>];
+<span class="kw">var</span> remapVis = <span class="kw">function</span>(img){ <span class="kw">return</span> img.<span class="fn">remap</span>(ESRI_VALUES, [<span class="nu">0</span>,<span class="nu">1</span>,<span class="nu">2</span>,<span class="nu">3</span>,<span class="nu">4</span>,<span class="nu">5</span>,<span class="nu">6</span>,<span class="nu">7</span>,<span class="nu">8</span>]); };
+<span class="kw">var</span> visParams = {min:<span class="nu">0</span>, max:<span class="nu">8</span>, palette:ESRI_COLORS};
+Map.<span class="fn">addLayer</span>(<span class="fn">remapVis</span>(lulc2017), visParams, <span class="st">'Esri LULC 2017'</span>);
+Map.<span class="fn">addLayer</span>(<span class="fn">remapVis</span>(lulc2021), visParams, <span class="st">'Esri LULC 2021'</span>, <span class="kw">false</span>);
+Map.<span class="fn">addLayer</span>(<span class="fn">remapVis</span>(lulc2025), visParams, <span class="st">'Esri LULC 2025'</span>);
+
+<span class="cm">// --- 4. Area per class per year ---</span>
+<span class="kw">var</span> areaByClass = <span class="kw">function</span>(img, lbl){
+  <span class="kw">var</span> a = ee.Image.<span class="fn">pixelArea</span>().<span class="fn">divide</span>(<span class="nu">1e6</span>).<span class="fn">addBands</span>(img.<span class="fn">rename</span>(<span class="st">'class'</span>));
+  <span class="fn">print</span>(<span class="st">'Area km2 - '</span>+lbl, a.<span class="fn">reduceRegion</span>({
+    reducer: ee.Reducer.<span class="fn">sum</span>().<span class="fn">group</span>({groupField:<span class="nu">1</span>,groupName:<span class="st">'class'</span>}),
+    geometry: aoi, scale:<span class="nu">10</span>, maxPixels:<span class="nu">1e13</span>}));
+};
+<span class="fn">areaByClass</span>(lulc2017,<span class="st">'2017'</span>); <span class="fn">areaByClass</span>(lulc2021,<span class="st">'2021'</span>); <span class="fn">areaByClass</span>(lulc2025,<span class="st">'2025'</span>);
+
+<span class="cm">// --- 5. Change 2017 -&gt; 2025 ---</span>
+<span class="kw">var</span> changed = lulc2017.<span class="fn">neq</span>(lulc2025).<span class="fn">selfMask</span>().<span class="fn">clip</span>(aoi);
+Map.<span class="fn">addLayer</span>(changed, {palette:[<span class="st">'#ff00ff'</span>]}, <span class="st">'Changed 2017-2025'</span>, <span class="kw">false</span>);
+<span class="kw">var</span> newBuilt = lulc2017.<span class="fn">neq</span>(<span class="nu">7</span>).<span class="fn">and</span>(lulc2025.<span class="fn">eq</span>(<span class="nu">7</span>)).<span class="fn">selfMask</span>().<span class="fn">clip</span>(aoi);
+Map.<span class="fn">addLayer</span>(newBuilt, {palette:[<span class="st">'#ED022A'</span>]}, <span class="st">'New Built 2017-2025'</span>);
+
+<span class="cm">// --- 6. Chart FC + single-year chart ---</span>
+<span class="kw">var</span> classFC = <span class="kw">function</span>(img,y){
+  <span class="kw">var</span> a = ee.Image.<span class="fn">pixelArea</span>().<span class="fn">divide</span>(<span class="nu">1e6</span>).<span class="fn">addBands</span>(img.<span class="fn">rename</span>(<span class="st">'class'</span>));
+  <span class="kw">var</span> g = ee.<span class="fn">List</span>(a.<span class="fn">reduceRegion</span>({reducer:ee.Reducer.<span class="fn">sum</span>().<span class="fn">group</span>({groupField:<span class="nu">1</span>,groupName:<span class="st">'class'</span>}),
+    geometry:aoi, scale:<span class="nu">30</span>, maxPixels:<span class="nu">1e13</span>}).<span class="fn">get</span>(<span class="st">'groups'</span>));
+  <span class="kw">return</span> ee.<span class="fn">FeatureCollection</span>(g.<span class="fn">map</span>(<span class="kw">function</span>(d){ d=ee.<span class="fn">Dictionary</span>(d);
+    <span class="kw">return</span> ee.<span class="fn">Feature</span>(<span class="kw">null</span>,{'class':d.<span class="fn">get</span>(<span class="st">'class'</span>),'area':d.<span class="fn">get</span>(<span class="st">'sum'</span>),'year':y}); }));
+};
+<span class="kw">var</span> fc2017=<span class="fn">classFC</span>(lulc2017,<span class="nu">2017</span>), fc2021=<span class="fn">classFC</span>(lulc2021,<span class="nu">2021</span>), fc2025=<span class="fn">classFC</span>(lulc2025,<span class="nu">2025</span>);
+<span class="kw">var</span> chart2025 = ui.Chart.feature.<span class="fn">byFeature</span>(fc2025,<span class="st">'class'</span>,<span class="st">'area'</span>)
+  .<span class="fn">setChartType</span>(<span class="st">'ColumnChart'</span>).<span class="fn">setOptions</span>({title:<span class="st">'Area by Class - 2025'</span>,
+    hAxis:{title:<span class="st">'Class'</span>}, vAxis:{title:<span class="st">'km2'</span>}, legend:{position:<span class="st">'none'</span>}, colors:[<span class="st">'#3ea34a'</span>]});
+<span class="fn">print</span>(chart2025);
+<span class="kw">var</span> allYears = fc2017.<span class="fn">merge</span>(fc2021).<span class="fn">merge</span>(fc2025);
+<span class="fn">print</span>(ui.Chart.feature.<span class="fn">groups</span>(allYears,<span class="st">'class'</span>,<span class="st">'area'</span>,<span class="st">'year'</span>)
+  .<span class="fn">setChartType</span>(<span class="st">'ColumnChart'</span>).<span class="fn">setOptions</span>({title:<span class="st">'Area by Class - 2017/2021/2025'</span>,
+    hAxis:{title:<span class="st">'Class'</span>}, vAxis:{title:<span class="st">'km2'</span>}, legend:{position:<span class="st">'top'</span>}}));
+
+<span class="cm">// --- 7. Vectorise 2025 with colours ---</span>
+<span class="kw">var</span> vectors2025 = lulc2025.<span class="fn">rename</span>(<span class="st">'class'</span>).<span class="fn">toInt</span>().<span class="fn">reduceToVectors</span>({
+  geometry:aoi, scale:<span class="nu">10</span>, geometryType:<span class="st">'polygon'</span>, eightConnected:<span class="kw">false</span>,
+  labelProperty:<span class="st">'class'</span>, maxPixels:<span class="nu">1e13</span>});
+<span class="kw">var</span> nameD = ee.<span class="fn">Dictionary</span>({<span class="st">'1'</span>:<span class="st">'Water'</span>,<span class="st">'2'</span>:<span class="st">'Trees'</span>,<span class="st">'4'</span>:<span class="st">'Flooded Vegetation'</span>,<span class="st">'5'</span>:<span class="st">'Crops'</span>,
+  <span class="st">'7'</span>:<span class="st">'Built Area'</span>,<span class="st">'8'</span>:<span class="st">'Bare Ground'</span>,<span class="st">'9'</span>:<span class="st">'Snow/Ice'</span>,<span class="st">'10'</span>:<span class="st">'Clouds'</span>,<span class="st">'11'</span>:<span class="st">'Rangeland'</span>});
+<span class="kw">var</span> colD = ee.<span class="fn">Dictionary</span>({<span class="st">'1'</span>:<span class="st">'#1A5BAB'</span>,<span class="st">'2'</span>:<span class="st">'#358221'</span>,<span class="st">'4'</span>:<span class="st">'#87D19E'</span>,<span class="st">'5'</span>:<span class="st">'#FFDB5C'</span>,
+  <span class="st">'7'</span>:<span class="st">'#ED022A'</span>,<span class="st">'8'</span>:<span class="st">'#EDE9E4'</span>,<span class="st">'9'</span>:<span class="st">'#F2FAFF'</span>,<span class="st">'10'</span>:<span class="st">'#C8C8C8'</span>,<span class="st">'11'</span>:<span class="st">'#C6AD8D'</span>});
+vectors2025 = vectors2025.<span class="fn">map</span>(<span class="kw">function</span>(f){ <span class="kw">var</span> k=ee.<span class="fn">Number</span>(f.<span class="fn">get</span>(<span class="st">'class'</span>)).<span class="fn">format</span>(<span class="st">'%d'</span>);
+  <span class="kw">return</span> f.<span class="fn">set</span>({'lc_name':nameD.<span class="fn">get</span>(k,<span class="st">'Unknown'</span>),'color':colD.<span class="fn">get</span>(k,<span class="st">'#000000'</span>)}); });
+Map.<span class="fn">addLayer</span>(vectors2025.<span class="fn">style</span>({styleProperty:<span class="st">'color'</span>, width:<span class="nu">1</span>}), {}, <span class="st">'Vectors 2025'</span>, <span class="kw">false</span>);
+
+<span class="cm">// --- 8. Exports ---</span>
+Export.image.<span class="fn">toDrive</span>({image:lulc2025.<span class="fn">toInt</span>(), description:<span class="st">'Kigali_EsriLULC_2025'</span>, folder:<span class="st">'earthengine'</span>,
+  fileNamePrefix:<span class="st">'kigali_esri_lulc_2025'</span>, region:aoi, scale:<span class="nu">10</span>, crs:<span class="st">'EPSG:32735'</span>, maxPixels:<span class="nu">1e13</span>});
+Export.table.<span class="fn">toDrive</span>({collection:vectors2025, description:<span class="st">'Kigali_EsriLULC_2025_SHP'</span>, folder:<span class="st">'earthengine'</span>,
+  fileNamePrefix:<span class="st">'kigali_esri_lulc_2025_vector'</span>, fileFormat:<span class="st">'SHP'</span>});
+Export.table.<span class="fn">toDrive</span>({collection:vectors2025, description:<span class="st">'Kigali_EsriLULC_2025_GeoJSON'</span>, folder:<span class="st">'earthengine'</span>,
+  fileNamePrefix:<span class="st">'kigali_esri_lulc_2025_vector'</span>, fileFormat:<span class="st">'GeoJSON'</span>});
+
+<span class="cm">// --- 9. App UI with legend, year select, chart, downloads ---</span>
+Map.<span class="fn">setControlVisibility</span>({layerList:<span class="kw">true</span>});
+<span class="kw">var</span> panel = ui.<span class="fn">Panel</span>({style:{width:<span class="st">'340px'</span>, padding:<span class="st">'12px'</span>}});
+panel.<span class="fn">add</span>(ui.<span class="fn">Label</span>(<span class="st">'Rwanda Esri Land Cover Explorer'</span>, {fontSize:<span class="st">'20px'</span>, fontWeight:<span class="st">'bold'</span>, color:<span class="st">'#3ea34a'</span>}));
+panel.<span class="fn">add</span>(ui.<span class="fn">Label</span>(<span class="st">'Esri 10 m Sentinel-2 LULC | 2017 . 2021 . 2025'</span>, {fontSize:<span class="st">'12px'</span>, color:<span class="st">'gray'</span>}));
+<span class="kw">var</span> legend = ui.<span class="fn">Panel</span>({style:{padding:<span class="st">'8px 0 0 0'</span>}});
+legend.<span class="fn">add</span>(ui.<span class="fn">Label</span>(<span class="st">'Classes'</span>, {fontWeight:<span class="st">'bold'</span>, fontSize:<span class="st">'13px'</span>}));
+<span class="kw">var</span> LN=[<span class="st">'Water'</span>,<span class="st">'Trees'</span>,<span class="st">'Flooded Veg'</span>,<span class="st">'Crops'</span>,<span class="st">'Built Area'</span>,<span class="st">'Bare Ground'</span>,<span class="st">'Snow/Ice'</span>,<span class="st">'Clouds'</span>,<span class="st">'Rangeland'</span>];
+ESRI_COLORS.<span class="fn">forEach</span>(<span class="kw">function</span>(c,i){ legend.<span class="fn">add</span>(ui.<span class="fn">Panel</span>([
+  ui.<span class="fn">Label</span>(<span class="st">''</span>,{backgroundColor:c,padding:<span class="st">'8px'</span>,margin:<span class="st">'0 6px 0 0'</span>,border:<span class="st">'1px solid #999'</span>}),
+  ui.<span class="fn">Label</span>(LN[i],{margin:<span class="st">'0'</span>,fontSize:<span class="st">'13px'</span>})], ui.Panel.Layout.<span class="fn">Flow</span>(<span class="st">'horizontal'</span>))); });
+panel.<span class="fn">add</span>(legend);
+<span class="kw">var</span> imgs = {<span class="st">'2017'</span>:lulc2017, <span class="st">'2021'</span>:lulc2021, <span class="st">'2025'</span>:lulc2025};
+panel.<span class="fn">add</span>(ui.<span class="fn">Label</span>(<span class="st">'Select year:'</span>, {margin:<span class="st">'10px 0 2px'</span>, fontSize:<span class="st">'13px'</span>}));
+panel.<span class="fn">add</span>(ui.<span class="fn">Select</span>({items:[<span class="st">'2017'</span>,<span class="st">'2021'</span>,<span class="st">'2025'</span>], value:<span class="st">'2025'</span>, onChange:<span class="kw">function</span>(y){
+  Map.<span class="fn">layers</span>().<span class="fn">reset</span>();
+  Map.<span class="fn">addLayer</span>(<span class="fn">remapVis</span>(imgs[y]), visParams, <span class="st">'Esri LULC '</span>+y);
+  Map.<span class="fn">addLayer</span>(kigali, {color:<span class="st">'black'</span>, fillColor:<span class="st">'00000000'</span>}, <span class="st">'Boundary'</span>);
+}}));
+panel.<span class="fn">add</span>(chart2025);
+panel.<span class="fn">add</span>(ui.<span class="fn">Label</span>(<span class="st">'Download data:'</span>, {fontWeight:<span class="st">'bold'</span>, margin:<span class="st">'10px 0 2px'</span>}));
+panel.<span class="fn">add</span>(ui.<span class="fn">Button</span>({label:<span class="st">'Download 2025 raster (GeoTIFF)'</span>, onClick:<span class="kw">function</span>(){
+  <span class="fn">print</span>(<span class="st">'Raster URL:'</span>, lulc2025.<span class="fn">toInt</span>().<span class="fn">getDownloadURL</span>({name:<span class="st">'kigali_esri_lulc_2025'</span>,
+    region:aoi, scale:<span class="nu">100</span>, crs:<span class="st">'EPSG:32735'</span>, filePerBand:<span class="kw">false</span>})); }}));
+panel.<span class="fn">add</span>(ui.<span class="fn">Button</span>({label:<span class="st">'Download 2025 vectors (GeoJSON)'</span>, onClick:<span class="kw">function</span>(){
+  <span class="fn">print</span>(<span class="st">'Vector URL:'</span>, vectors2025.<span class="fn">getDownloadURL</span>({format:<span class="st">'GeoJSON'</span>,
+    filename:<span class="st">'kigali_esri_lulc_2025_vector'</span>})); }}));
+ui.root.<span class="fn">add</span>(panel);</code></pre>
+      </div>
+    </section>
+
+    <!-- REFERENCES -->
+    <section id="refs">
+      <h2 class="step"><span class="step-num">&#xA7;</span>Sources &amp; Limitations</h2>
+      <h3>Data &amp; endpoints</h3>
+      <ul>
+        <li><b>Esri 10 m Annual Land Cover</b> — Karra, Kontgis et al. (2021), "Global land use/land cover with Sentinel-2 and deep learning," IGARSS. Produced by Impact Observatory for Esri · © Esri · CC BY-4.0.</li>
+        <li><b>GEE ImageCollection:</b> <code>projects/sat-io/open-datasets/landcover/ESRI_Global-LULC_10m_TS</code> (awesome-gee-community-catalog; 2025 layer added May 2026).</li>
+        <li><b>Esri ArcGIS ImageServer:</b> <code>https://ic.imagery1.arcgis.com/arcgis/rest/services/Sentinel2_10m_LandCover/ImageServer</code></li>
+        <li><b>FAO GAUL 2015 (level 0)</b> — <code>FAO/GAUL_SIMPLIFIED_500m/2015/level0</code> for the Rwanda boundary.</li>
+      </ul>
+      <h3>Known limitations</h3>
+      <ul>
+        <li><b>Accuracy ~75 %:</b> some pixels are misclassified; report this and treat marginal change cautiously.</li>
+        <li><b>Classifier variability:</b> apparent change between years can be model noise, especially Crops ↔ Rangeland; trust spatially coherent change.</li>
+        <li><b>Sparse class values:</b> must be handled explicitly in palettes and styles (done throughout this guide).</li>
+        <li><b>Vectorising is feasible at 10 m for Kigali:</b> the small city AOI runs at native resolution; only a national AOI would need a coarser scale.</li>
+        <li><b>Tool division:</b> north arrow, scale bar, print layout and on-map graphs are QGIS features — the GEE app cannot produce them.</li>
+      </ul>
+      <div class="note warn"><b>Reminder:</b> This document supplies method, code and style files only. Every number in your report must come from running these scripts on live data — do not cite figures you have not generated yourself. When you publish maps from this data, include the required attribution: <i>"Esri 10 m Land Cover — Impact Observatory / Esri, CC BY-4.0."</i></div>
+    </section>
+
+    <footer>
+      <p><b>Kigali City Esri Land Cover Analysis</b> — GEE + QGIS Research Practical · Esri 10 m Sentinel-2 LULC · 2017 · 2021 · 2025 · maps, area statistics, change detection, coloured vectors, downloadable app, and print-ready QGIS cartography.</p>
+      <p style="margin-top:6px">Method: load the Esri annual time series → colour each year in the official palette → compute per-class area → detect from-to change → vectorise classes with colours → export raster + vector → publish an app with download buttons → compose a print map with north arrow, scale bar, legend and graphs in QGIS. Adjust years, scale and target classes to suit your study.</p>
+    </footer>
+
+  </main>
+  </div>
+</div>
+
+<script>
+  function copyCode(btn){
+    const pre = btn.closest('.codewrap').querySelector('pre code');
+    const text = pre.innerText;
+    navigator.clipboard.writeText(text).then(()=>{
+      const orig = btn.textContent;
+      btn.textContent = 'Copied ✓'; btn.classList.add('done');
+      setTimeout(()=>{btn.textContent=orig;btn.classList.remove('done')},1600);
+    });
+  }
+  function copyPrompt(btn){
+    const txt = btn.closest('.prompt').querySelector('.ptext').innerText;
+    navigator.clipboard.writeText(txt).then(()=>{
+      const orig = btn.textContent;
+      btn.textContent = 'Copied ✓'; btn.classList.add('done');
+      setTimeout(()=>{btn.textContent=orig;btn.classList.remove('done')},1600);
+    });
+  }
+  const links = document.querySelectorAll('.sidebar a');
+  const sections = [...links].map(a=>document.querySelector(a.getAttribute('href')));
+  window.addEventListener('scroll', ()=>{
+    let idx = 0;
+    sections.forEach((s,i)=>{ if(s && s.getBoundingClientRect().top < 120) idx = i; });
+    links.forEach(l=>l.classList.remove('active'));
+    if(links[idx]) links[idx].classList.add('active');
+  });
+</script>
+
+</body>
+</html>
