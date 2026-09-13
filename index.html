@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GEE Practical: Rwanda Land Use / Land Cover — ESA WorldCover (2020 & 2021)</title>
+<style>
+  :root{
+    --bg:#0f1b2d; --panel:#16263f; --card:#1b2f4d; --accent:#00b4d8;
+    --accent2:#48cae4; --text:#e8eef5; --muted:#9fb2c8; --line:#26405f;
+    --code-bg:#0b1526; --ok:#2ec27e; --warn:#f5a623; --sidebar:#0c1524;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.65;font-size:15px}
+  .wrap{display:flex;min-height:100vh}
+  .sidebar{width:280px;background:var(--sidebar);border-right:1px solid var(--line);
+    position:sticky;top:0;height:100vh;overflow-y:auto;padding:22px 0;flex-shrink:0}
+  .sidebar h2{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--accent2);
+    padding:0 22px 10px;margin-top:14px}
+  .sidebar h2:first-child{margin-top:0}
+  .sidebar a{display:block;padding:8px 22px;color:var(--muted);text-decoration:none;
+    font-size:13.5px;border-left:3px solid transparent;transition:.15s}
+  .sidebar a:hover{background:var(--panel);color:var(--text)}
+  .sidebar a.active{border-left-color:var(--accent);color:var(--accent2);background:var(--panel)}
+  main{flex:1;max-width:920px;margin:0 auto;padding:40px 48px 90px}
+  .hero{background:linear-gradient(135deg,#16263f,#1b2f4d);border:1px solid var(--line);
+    border-radius:14px;padding:34px 36px;margin-bottom:34px}
+  .hero .tag{display:inline-block;background:var(--accent);color:#04121f;font-size:11px;
+    font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:.5px;text-transform:uppercase}
+  .hero h1{font-size:28px;margin:14px 0 8px;line-height:1.25}
+  .hero p{color:var(--muted);font-size:15px}
+  .meta{display:flex;gap:26px;flex-wrap:wrap;margin-top:18px;font-size:13px;color:var(--muted)}
+  .meta b{color:var(--accent2)}
+  section{margin-bottom:44px;scroll-margin-top:20px}
+  h2.step{font-size:22px;margin-bottom:6px;padding-bottom:12px;border-bottom:2px solid var(--accent);
+    display:inline-block}
+  .step-num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;
+    background:var(--accent);color:#04121f;border-radius:8px;font-weight:700;font-size:15px;margin-right:10px}
+  h3{font-size:17px;margin:22px 0 8px;color:var(--accent2)}
+  p{margin-bottom:12px;color:var(--text)}
+  .lead{color:var(--muted);margin-bottom:18px}
+  ul,ol{margin:0 0 14px 22px}
+  li{margin-bottom:7px}
+  .clicks{background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:16px 18px 16px 20px;margin:14px 0}
+  .clicks .lbl{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--accent2);
+    font-weight:700;margin-bottom:10px}
+  .clicks ol{margin:0 0 0 18px}
+  .clicks li{margin-bottom:8px}
+  .clicks code,p code,li code{background:#0b1526;color:var(--accent2);padding:2px 7px;
+    border-radius:5px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+  .codewrap{position:relative;margin:14px 0 20px}
+  .codewrap .head{display:flex;justify-content:space-between;align-items:center;
+    background:#122036;border:1px solid var(--line);border-bottom:none;
+    border-radius:10px 10px 0 0;padding:8px 14px;font-size:12px;color:var(--muted)}
+  .codewrap .head .fname{color:var(--accent2);font-family:monospace}
+  .copybtn{background:var(--accent);color:#04121f;border:none;padding:5px 14px;border-radius:6px;
+    font-size:12px;font-weight:700;cursor:pointer;transition:.15s}
+  .copybtn:hover{background:var(--accent2)}
+  .copybtn.done{background:var(--ok);color:#04121f}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:0 0 10px 10px;
+    padding:16px 18px;overflow-x:auto;margin:0}
+  pre code{font-family:'SF Mono',Consolas,'Courier New',monospace;font-size:13px;
+    line-height:1.6;color:#d6e4f0;background:none;padding:0}
+  .cm{color:#6b8299}
+  .kw{color:#ff9e64}
+  .st{color:#9ece6a}
+  .fn{color:#7dcfff}
+  .nu{color:#e0af68}
+  .note{border-left:4px solid var(--accent);background:rgba(0,180,216,.08);
+    padding:12px 16px;border-radius:0 8px 8px 0;margin:16px 0;font-size:14px}
+  .note.warn{border-left-color:var(--warn);background:rgba(245,166,35,.08)}
+  .note b{color:var(--accent2)}
+  .note.warn b{color:var(--warn)}
+  .prompt{background:#10233c;border:1px dashed var(--accent);border-radius:10px;
+    padding:14px 16px;margin:12px 0}
+  .prompt .plbl{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);
+    font-weight:700;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .prompt .ptext{font-family:monospace;font-size:13px;color:#d6e4f0;white-space:pre-wrap;line-height:1.55}
+  .pcopy{background:transparent;border:1px solid var(--accent);color:var(--accent);
+    padding:3px 10px;border-radius:5px;font-size:11px;cursor:pointer}
+  .pcopy:hover{background:var(--accent);color:#04121f}
+  .pcopy.done{background:var(--ok);border-color:var(--ok);color:#04121f}
+  .flow{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0;align-items:stretch}
+  .flow .node{flex:1;min-width:120px;background:var(--card);border:1px solid var(--line);
+    border-radius:10px;padding:14px 12px;text-align:center}
+  .flow .node .n{width:26px;height:26px;background:var(--accent);color:#04121f;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;margin:0 auto 8px}
+  .flow .node .t{font-size:13px;font-weight:600;color:var(--accent2)}
+  .flow .node .d{font-size:11.5px;color:var(--muted);margin-top:4px}
+  .flow .arrow{align-self:center;color:var(--accent);font-size:20px}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left}
+  th{background:var(--card);color:var(--accent2);font-weight:600}
+  td code{background:#0b1526;color:var(--accent2);padding:1px 6px;border-radius:4px}
+  .swatch{display:inline-block;width:14px;height:14px;border-radius:3px;
+    vertical-align:middle;margin-right:6px;border:1px solid rgba(255,255,255,.15)}
+  footer{border-top:1px solid var(--line);padding-top:22px;margin-top:40px;color:var(--muted);font-size:13px}
+  @media(max-width:900px){
+    .sidebar{display:none}
+    main{padding:24px 18px 60px}
+    .flow{flex-direction:column}
+    .flow .arrow{transform:rotate(90deg)}
+  }
+  .mobnav{display:none}
+  @media(max-width:900px){
+    .mobnav{display:block;position:sticky;top:0;z-index:20;background:var(--sidebar);
+      border-bottom:1px solid var(--line);padding:10px 16px}
+    .mobnav select{width:100%;background:var(--panel);color:var(--text);border:1px solid var(--line);
+      padding:9px;border-radius:8px;font-size:14px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav class="sidebar" id="sidebar">
+    <h2>Overview</h2>
+    <a href="#intro">Introduction</a>
+    <a href="#workflow">Analysis Workflow</a>
+    <a href="#prereq">Prerequisites</a>
+    <h2>Practical Steps</h2>
+    <a href="#step1">1 · Set Up Project &amp; Script</a>
+    <a href="#step2">2 · Add Rwanda Boundary</a>
+    <a href="#step3">3 · Load ESA WorldCover</a>
+    <a href="#step4">4 · Clip &amp; Visualize</a>
+    <a href="#step5">5 · Remap for Clean Display</a>
+    <a href="#step6">6 · Compute Area per Class</a>
+    <a href="#step7">7 · Detect Land Cover Change</a>
+    <a href="#step8">8 · Charts &amp; Bar Graphs</a>
+    <a href="#step9">9 · Export Results</a>
+    <a href="#step10">10 · Build the Web App</a>
+    <a href="#step11">11 · Publish the App</a>
+    <h2>Reference</h2>
+    <a href="#prompts">AI Prompt Library</a>
+    <a href="#fullscript">Full Combined Script</a>
+  </nav>
+
+  <div style="flex:1">
+  <div class="mobnav">
+    <select onchange="location.href=this.value">
+      <option value="#intro">Jump to section…</option>
+      <option value="#workflow">Analysis Workflow</option>
+      <option value="#step1">1 · Set Up Project &amp; Script</option>
+      <option value="#step2">2 · Add Rwanda Boundary</option>
+      <option value="#step3">3 · Load ESA WorldCover</option>
+      <option value="#step4">4 · Clip &amp; Visualize</option>
+      <option value="#step5">5 · Remap for Clean Display</option>
+      <option value="#step6">6 · Compute Area per Class</option>
+      <option value="#step7">7 · Detect Land Cover Change</option>
+      <option value="#step8">8 · Charts &amp; Bar Graphs</option>
+      <option value="#step9">9 · Export Results</option>
+      <option value="#step10">10 · Build the Web App</option>
+      <option value="#step11">11 · Publish the App</option>
+      <option value="#prompts">AI Prompt Library</option>
+      <option value="#fullscript">Full Combined Script</option>
+    </select>
+  </div>
+
+  <main>
+
+    <!-- HERO -->
+    <div class="hero" id="intro">
+      <span class="tag">GEE Practical Session</span>
+      <h1>Rwanda Land Use / Land Cover — ESA WorldCover (2020 &amp; 2021)</h1>
+      <p>A step-by-step, click-by-click guide to mapping and comparing land cover across Rwanda using the ESA WorldCover 10 m product in the Google Earth Engine Code Editor — from project setup to a published interactive web app.</p>
+      <div class="meta">
+        <span><b>Platform:</b> GEE Code Editor (JavaScript)</span>
+        <span><b>Dataset:</b> ESA WorldCover v100 (2020) &amp; v200 (2021)</span>
+        <span><b>Resolution:</b> 10 m</span>
+        <span><b>Classes:</b> 11 LULC categories</span>
+        <span><b>Output:</b> LULC maps + Change layer + Web App</span>
+      </div>
+    </div>
+
+    <!-- INTRO -->
+    <section>
+      <p class="lead">This session uses the <b>ESA WorldCover</b> product — a global 10 m land cover map produced by the European Space Agency using Sentinel-1 and Sentinel-2 imagery. Two versions are available on GEE: <b>v100</b> covering 2020 and <b>v200</b> covering 2021. Unlike time-series approaches, ESA WorldCover is a carefully validated static product with 11 well-defined classes and an overall accuracy above 75 % globally.</p>
+      <div class="note"><b>What you will build:</b> An ESA WorldCover 2020 map for Rwanda, an ESA WorldCover 2021 map, a binary change layer showing where the class shifted between the two years, area-by-class bar charts for both years, and a published Earth Engine App titled <i>"Rwanda ESA WorldCover Explorer"</i>.</div>
+    </section>
+
+    <!-- WORKFLOW -->
+    <section id="workflow">
+      <h2 class="step"><span class="step-num">&#x21A6;</span>LULC Analysis Workflow</h2>
+      <p class="lead">Every step below follows this logical pipeline.</p>
+      <div class="flow">
+        <div class="node"><div class="n">1</div><div class="t">Boundary</div><div class="d">Define Rwanda AOI</div></div>
+        <div class="arrow">&#x2192;</div>
+        <div class="node"><div class="n">2</div><div class="t">Load</div><div class="d">ESA WorldCover v100 &amp; v200</div></div>
+        <div class="arrow">&#x2192;</div>
+        <div class="node"><div class="n">3</div><div class="t">Clip &amp; Visualize</div><div class="d">11-class colour map</div></div>
+        <div class="arrow">&#x2192;</div>
+        <div class="node"><div class="n">4</div><div class="t">Remap</div><div class="d">10,20,30... &#x2192; 0,1,2...</div></div>
+      </div>
+      <div class="flow">
+        <div class="node"><div class="n">5</div><div class="t">Area Stats</div><div class="d">km&#x00B2; per class, per year</div></div>
+        <div class="arrow">&#x2192;</div>
+        <div class="node"><div class="n">6</div><div class="t">Change Map</div><div class="d">Where class shifted</div></div>
+        <div class="arrow">&#x2192;</div>
+        <div class="node"><div class="n">7</div><div class="t">Charts</div><div class="d">Bar graphs &amp; comparison</div></div>
+        <div class="arrow">&#x2192;</div>
+        <div class="node"><div class="n">8</div><div class="t">Export / App</div><div class="d">Deliver results</div></div>
+      </div>
+    </section>
+
+    <!-- PREREQ -->
+    <section id="prereq">
+      <h3>Prerequisites</h3>
+      <ul>
+        <li>A registered <b>Google Earth Engine</b> account with an associated Google Cloud project.</li>
+        <li>Access to <code>code.earthengine.google.com</code> in a browser (Chrome recommended).</li>
+        <li>Basic familiarity with the Code Editor panels (Scripts, Console, Inspector, Tasks, Map).</li>
+      </ul>
+
+      <h3>About ESA WorldCover</h3>
+      <p>ESA WorldCover is produced from a full year of Sentinel-1 SAR and Sentinel-2 optical imagery using a machine-learning classification pipeline. Two versions are hosted on GEE as separate ImageCollections, each containing a single global image:</p>
+      <table>
+        <tr><th>GEE Asset ID</th><th>Year</th><th>Version</th><th>Overall Accuracy</th></tr>
+        <tr><td><code>ESA/WorldCover/v100</code></td><td>2020</td><td>Version 1</td><td>~74.4 %</td></tr>
+        <tr><td><code>ESA/WorldCover/v200</code></td><td>2021</td><td>Version 2</td><td>~76.7 %</td></tr>
+      </table>
+      <div class="note warn"><b>Important:</b> Because v100 and v200 used slightly different training data and algorithms, some apparent "change" between 2020 and 2021 may be classification uncertainty rather than real land cover change. Always interpret the change map with this in mind, especially for spectrally similar classes (Grassland ↔ Shrubland, Cropland ↔ Grassland).</div>
+
+      <h3>ESA WorldCover Classes</h3>
+      <p>The class values are non-sequential multiples of 10 (plus 95). This is intentional in the ESA design — it allows future sub-classes to be inserted between existing ones. GEE stores these values in the <code>Map</code> band.</p>
+      <table>
+        <tr><th>Class value</th><th>Class name</th><th>Colour</th></tr>
+        <tr><td>10</td><td>Tree cover</td><td><span class="swatch" style="background:#006400"></span>#006400</td></tr>
+        <tr><td>20</td><td>Shrubland</td><td><span class="swatch" style="background:#ffbb22"></span>#ffbb22</td></tr>
+        <tr><td>30</td><td>Grassland</td><td><span class="swatch" style="background:#ffff4c"></span>#ffff4c</td></tr>
+        <tr><td>40</td><td>Cropland</td><td><span class="swatch" style="background:#f096ff"></span>#f096ff</td></tr>
+        <tr><td>50</td><td>Built-up</td><td><span class="swatch" style="background:#fa0000"></span>#fa0000</td></tr>
+        <tr><td>60</td><td>Bare / sparse vegetation</td><td><span class="swatch" style="background:#b4b4b4"></span>#b4b4b4</td></tr>
+        <tr><td>70</td><td>Snow and Ice</td><td><span class="swatch" style="background:#f0f0f0"></span>#f0f0f0</td></tr>
+        <tr><td>80</td><td>Permanent water bodies</td><td><span class="swatch" style="background:#0064c8"></span>#0064c8</td></tr>
+        <tr><td>90</td><td>Herbaceous wetland</td><td><span class="swatch" style="background:#0096a0"></span>#0096a0</td></tr>
+        <tr><td>95</td><td>Mangroves</td><td><span class="swatch" style="background:#00cf75"></span>#00cf75</td></tr>
+        <tr><td>100</td><td>Moss and lichen</td><td><span class="swatch" style="background:#fae6a0"></span>#fae6a0</td></tr>
+      </table>
+      <div class="note"><b>Rwanda context:</b> Expect <b>Cropland</b> (40) to dominate — Rwanda is one of the most densely farmed countries in Africa. <b>Tree cover</b> (10) is concentrated in Nyungwe Forest, Gishwati-Mukura, and the Volcanoes NP. <b>Built-up</b> (50) is centred on Kigali and secondary cities. <b>Permanent water</b> (80) includes Lake Kivu. Snow, Ice, Mangroves, and Moss &amp; Lichen will be absent or negligible.</div>
+    </section>
+
+    <!-- STEP 1 -->
+    <section id="step1">
+      <h2 class="step"><span class="step-num">1</span>Set Up a New Script</h2>
+      <p class="lead">Create a clean, named script file in your personal GEE repository before writing any code.</p>
+      <div class="clicks">
+        <div class="lbl">Click by click</div>
+        <ol>
+          <li>Go to <code>code.earthengine.google.com</code> and sign in.</li>
+          <li>In the <b>Scripts</b> panel (left), click the <b>+</b> icon next to your username.</li>
+          <li>Choose <b>New Script</b>. Name it <code>rwanda_esa_worldcover</code>.</li>
+          <li>The new file opens in the Code Editor — it is empty and ready.</li>
+          <li>Click <b>Save</b> (or press <kbd>Ctrl+S</kbd>) before you start typing.</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- STEP 2 -->
+    <section id="step2">
+      <h2 class="step"><span class="step-num">2</span>Add the Rwanda Boundary</h2>
+      <p class="lead">Define Rwanda as the Area of Interest (AOI) using the FAO GAUL level-0 administrative boundaries.</p>
+      <div class="codewrap">
+        <div class="head"><span class="fname">Rwanda boundary</span><button class="copybtn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm">// Load FAO GAUL level-0 administrative boundaries</span>
+<span class="kw">var</span> countries = ee.<span class="fn">FeatureCollection</span>(<span class="st">'FAO/GAUL_SIMPLIFIED_500m/2015/level0'</span>);
+
+<span class="cm">// Filter to Rwanda and extract geometry</span>
+<span class="kw">var</span> rwanda = countries.<span class="fn">filter</span>(ee.Filter.<span class="fn">eq</span>(<span class="st">'ADM0_NAME'</span>, <span class="st">'Rwanda'</span>));
+<span class="kw">var</span> aoi = rwanda.<span class="fn">geometry</span>();
+
+<span class="cm">// Centre the map on Rwanda</span>
+Map.<span class="fn">centerObject</span>(aoi, <span class="nu">8</span>);
+Map.<span class="fn">addLayer</span>(rwanda, {color: <span class="st">'red'</span>, fillColor: <span class="st">'00000000'</span>}, <span class="st">'Rwanda Boundary'</span>);</code></pre>
+      </div>
+      <div class="note"><b>Why:</b> Defining <code>aoi</code> once lets every subsequent <code>.clip()</code> and <code>.reduceRegion()</code> use the same geometry without repetition. The transparent fill keeps the land cover visible underneath the outline.</div>
+    </section>
+
+    <!-- STEP 3 -->
+    <section id="step3">
+      <h2 class="step"><span class="step-num">3</span>Load the ESA WorldCover Dataset</h2>
+      <p class="lead">Each version of ESA WorldCover is an ImageCollection containing a single global image. We call <code>.first()</code> to extract that image and select the <code>Map</code> band, which holds the class values.</p>
+      <div class="codewrap">
+        <div class="head"><span class="fname">Load ESA WorldCover v100 (2020) &amp; v200 (2021)</span><button class="copybtn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm">// ESA WorldCover 2020 — Version 1 (v100)</span>
+<span class="kw">var</span> esa2020 = ee.<span class="fn">ImageCollection</span>(<span class="st">'ESA/WorldCover/v100'</span>)
+  .<span class="fn">first</span>()
+  .<span class="fn">select</span>(<span class="st">'Map'</span>);
+
+<span class="cm">// ESA WorldCover 2021 — Version 2 (v200)</span>
+<span class="kw">var</span> esa2021 = ee.<span class="fn">ImageCollection</span>(<span class="st">'ESA/WorldCover/v200'</span>)
+  .<span class="fn">first</span>()
+  .<span class="fn">select</span>(<span class="st">'Map'</span>);
+
+<span class="fn">print</span>(<span class="st">'ESA WorldCover 2020 (v100):'</span>, esa2020);
+<span class="fn">print</span>(<span class="st">'ESA WorldCover 2021 (v200):'</span>, esa2021);</code></pre>
+      </div>
+      <div class="note"><b>Why <code>.first()</code>?</b> The GEE catalog stores each WorldCover product as an ImageCollection so it fits the standard data model, but each collection holds only one image (the global mosaic). <code>.first()</code> extracts that single image so we can work with it directly.</div>
+    </section>
+
+    <!-- STEP 4 -->
+    <section id="step4">
+      <h2 class="step"><span class="step-num">4</span>Clip to Rwanda &amp; Quick Visualize</h2>
+      <p class="lead">Clip both images to the Rwanda boundary and add them to the map. GEE can display the ESA WorldCover directly using the dataset's built-in style — no custom palette needed for a first look.</p>
+      <div class="codewrap">
+        <div class="head"><span class="fname">Clip &amp; display with built-in style</span><button class="copybtn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm">// Clip to Rwanda</span>
+<span class="kw">var</span> lulc2020 = esa2020.<span class="fn">clip</span>(aoi);
+<span class="kw">var</span> lulc2021 = esa2021.<span class="fn">clip</span>(aoi);
+
+<span class="cm">// Option A — built-in ESA style (fastest for a quick look)</span>
+Map.<span class="fn">addLayer</span>(lulc2020, {}, <span class="st">'ESA WorldCover 2020 (built-in style)'</span>, <span class="kw">false</span>);
+Map.<span class="fn">addLayer</span>(lulc2021, {}, <span class="st">'ESA WorldCover 2021 (built-in style)'</span>, <span class="kw">false</span>);</code></pre>
+      </div>
+      <div class="note"><b>Passing empty <code>{}</code>:</b> When you pass an empty vis params object, GEE uses the dataset's own embedded style, which matches the official ESA WorldCover legend. This is the easiest way to get a correctly coloured map instantly. Step 5 shows how to control the palette yourself for consistency across all your layers.</div>
+    </section>
+
+    <!-- STEP 5 -->
+    <section id="step5">
+      <h2 class="step"><span class="step-num">5</span>Remap Values for a Custom Palette</h2>
+      <p class="lead">The ESA WorldCover class values are non-sequential — 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 100. GEE's palette parameter maps colours to a <em>continuous</em> range between <code>min</code> and <code>max</code>, so we cannot directly assign colours by value. The solution is to <b>remap</b> the original values to consecutive integers 0–10 before applying the palette.</p>
+      <div class="codewrap">
+        <div class="head"><span class="fname">Remap + custom palette visualization</span><button class="copybtn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm">// Original ESA class values (non-sequential)</span>
+<span class="kw">var</span> fromValues = [<span class="nu">10</span>, <span class="nu">20</span>, <span class="nu">30</span>, <span class="nu">40</span>, <span class="nu">50</span>, <span class="nu">60</span>, <span class="nu">70</span>, <span class="nu">80</span>, <span class="nu">90</span>, <span class="nu">95</span>, <span class="nu">100</span>];
+
+<span class="cm">// Remapped sequential values 0–10</span>
+<span class="kw">var</span> toValues   = [<span class="nu">0</span>, <span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span>, <span class="nu">4</span>, <span class="nu">5</span>, <span class="nu">6</span>, <span class="nu">7</span>, <span class="nu">8</span>, <span class="nu">9</span>, <span class="nu">10</span>];
+
+<span class="cm">// Official ESA WorldCover palette (one colour per class, same order)</span>
+<span class="kw">var</span> esaPalette = [
+  <span class="st">'006400'</span>,  <span class="cm">// 0  ← Tree cover</span>
+  <span class="st">'ffbb22'</span>,  <span class="cm">// 1  ← Shrubland</span>
+  <span class="st">'ffff4c'</span>,  <span class="cm">// 2  ← Grassland</span>
+  <span class="st">'f096ff'</span>,  <span class="cm">// 3  ← Cropland</span>
+  <span class="st">'fa0000'</span>,  <span class="cm">// 4  ← Built-up</span>
+  <span class="st">'b4b4b4'</span>,  <span class="cm">// 5  ← Bare / sparse vegetation</span>
+  <span class="st">'f0f0f0'</span>,  <span class="cm">// 6  ← Snow and Ice</span>
+  <span class="st">'0064c8'</span>,  <span class="cm">// 7  ← Permanent water bodies</span>
+  <span class="st">'0096a0'</span>,  <span class="cm">// 8  ← Herbaceous wetland</span>
+  <span class="st">'00cf75'</span>,  <span class="cm">// 9  ← Mangroves</span>
+  <span class="st">'fae6a0'</span>   <span class="cm">// 10 ← Moss and lichen</span>
+];
+
+<span class="kw">var</span> visParams = {min: <span class="nu">0</span>, max: <span class="nu">10</span>, palette: esaPalette};
+
+<span class="cm">// Remap both years — remapped images are for display only</span>
+<span class="kw">var</span> vis2020 = lulc2020.<span class="fn">remap</span>(fromValues, toValues).<span class="fn">rename</span>(<span class="st">'class'</span>);
+<span class="kw">var</span> vis2021 = lulc2021.<span class="fn">remap</span>(fromValues, toValues).<span class="fn">rename</span>(<span class="st">'class'</span>);
+
+Map.<span class="fn">addLayer</span>(vis2020, visParams, <span class="st">'ESA WorldCover 2020'</span>);
+Map.<span class="fn">addLayer</span>(vis2021, visParams, <span class="st">'ESA WorldCover 2021'</span>);</code></pre>
+      </div>
+      <div class="note"><b>Key rule:</b> Keep <code>lulc2020</code> and <code>lulc2021</code> (original class values) for all <em>analysis</em> — area computation, change detection, and export. Use <code>vis2020</code> / <code>vis2021</code> (remapped) only for <em>map display</em>. Mixing them up will give wrong class values in statistics.</div>
+    </section>
+
+    <!-- STEP 6 -->
+    <section id="step6">
+      <h2 class="step"><span class="step-num">6</span>Compute Area per Class</h2>
+      <p class="lead">Calculate how many square kilometres each land cover class occupies in Rwanda for 2020 and 2021. Use the <b>original</b> class values (10, 20, 30…) so the output is interpretable without a lookup table.</p>
+      <div class="codewrap">
+        <div class="head"><span class="fname">Area per class — grouped sum reducer</span><button class="copybtn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm">// Reusable function: area (km2) per ESA class value</span>
+<span class="kw">function</span> <span class="fn">getAreaByClass</span>(lulcImage) {
+  <span class="kw">var</span> areaImg = ee.Image.<span class="fn">pixelArea</span>().<span class="fn">divide</span>(<span class="nu">1e6</span>)   <span class="cm">// m² → km²</span>
+    .<span class="fn">addBands</span>(lulcImage.<span class="fn">rename</span>(<span class="st">'class'</span>));
+
+  <span class="kw">var</span> result = areaImg.<span class="fn">reduceRegion</span>({
+    reducer: ee.Reducer.<span class="fn">sum</span>().<span class="fn">group</span>({groupField: <span class="nu">1</span>, groupName: <span class="st">'class'</span>}),
+    geometry: aoi,
+    scale: <span class="nu">100</span>,          <span class="cm">// 100 m for speed; accurate at national scale</span>
+    maxPixels: <span class="nu">1e13</span>
+  });
+  <span class="kw">return</span> ee.<span class="fn">List</span>(result.<span class="fn">get</span>(<span class="st">'groups'</span>));
+}
+
+<span class="kw">var</span> areaGroups2020 = <span class="fn">getAreaByClass</span>(lulc2020);
+<span class="kw">var</span> areaGroups2021 = <span class="fn">getAreaByClass</span>(lulc2021);
+
+<span class="fn">print</span>(<span class="st">'Area by class 2020 (km2):'</span>, areaGroups2020);
+<span class="fn">print</span>(<span class="st">'Area by class 2021 (km2):'</span>, areaGroups2021);</code></pre>
+      </div>
+      <div class="note"><b>Reading the output:</b> Expand the printed list in the Console. Each dictionary has a <code>class</code> key (the original ESA value: 10, 20, 30…) and a <code>sum</code> key (area in km²). Rwanda's total land area is ~26,338 km² — the class areas should sum close to this.</div>
+    </section>
+
+    <!-- STEP 7 -->
+    <section id="step7">
+      <h2 class="step"><span class="step-num">7</span>Detect &amp; Map Land Cover Change</h2>
+      <p class="lead">Compare the 2020 and 2021 maps pixel-by-pixel. Any pixel where the class value changed is flagged. A second layer encodes the specific from-to transition for deeper interpretation.</p>
+
+      <h3>7.1 — Binary change mask</h3>
+      <div class="codewrap">
+        <div class="head"><span class="fname">Changed vs stable pixels</span><button class="copybtn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm">// Binary: 1 = class changed, 0 = class stayed the same</span>
+<span class="kw">var</span> changed = lulc2020.<span class="fn">neq</span>(lulc2021).<span class="fn">rename</span>(<span class="st">'changed'</span>);
+
+Map.<span class="fn">addLayer</span>(changed, {min: <span class="nu">0</span>, max: <span class="nu">1</span>,
+  palette: [<span class="st">'#1b2f4d'</span>, <span class="st">'#e63946'</span>]},   <span class="cm">// dark = stable, red = changed</span>
+  <span class="st">'Changed Pixels 2020–2021'</span>);</code></pre>
+      </div>
+
+      <h3>7.2 — Transition encoding</h3>
+      <p>Encode each changed pixel as <code>from_value * 1000 + to_value</code>. Because ESA values go up to 100, multiplying by 1000 keeps from-class and to-class unambiguously separate (e.g. Cropland→Built = 40×1000+50 = 40050).</p>
+      <div class="codewrap">
+        <div class="head"><span class="fname">Transition map (from × 1000 + to)</span><button class="copybtn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm">// Encode: from_class * 1000 + to_class</span>
+<span class="cm">// Example: Tree cover(10) → Built-up(50) = 10050</span>
+<span class="cm">// Example: Cropland(40)   → Built-up(50) = 40050</span>
+<span class="kw">var</span> transition = lulc2020.<span class="fn">multiply</span>(<span class="nu">1000</span>).<span class="fn">add</span>(lulc2021)
+  .<span class="fn">rename</span>(<span class="st">'transition'</span>)
+  .<span class="fn">updateMask</span>(changed)   <span class="cm">// show only changed pixels</span>
+  .<span class="fn">clip</span>(aoi);
+
+<span class="fn">print</span>(<span class="st">'Transition layer (changed pixels only):'</span>, transition);</code></pre>
+      </div>
+
+      <table>
+        <tr><th>Transition code</th><th>From class</th><th>To class</th><th>Likely interpretation</th></tr>
+        <tr><td><code>10050</code></td><td>Tree cover (10)</td><td>Built-up (50)</td><td>Forest converted to urban</td></tr>
+        <tr><td><code>10040</code></td><td>Tree cover (10)</td><td>Cropland (40)</td><td>Deforestation for agriculture</td></tr>
+        <tr><td><code>40050</code></td><td>Cropland (40)</td><td>Built-up (50)</td><td>Agricultural land urbanised</td></tr>
+        <tr><td><code>30040</code></td><td>Grassland (30)</td><td>Cropland (40)</td><td>New cultivation on grassland</td></tr>
+        <tr><td><code>40010</code></td><td>Cropland (40)</td><td>Tree cover (10)</td><td>Cropland reforested / abandoned</td></tr>
+        <tr><td><code>20030</code></td><td>Shrubland (20)</td><td>Grassland (30)</td><td>Degradation or seasonal shift</td></tr>
+      </table>
+      <div class="note"><b>Inspector tip:</b> Click the <b>Inspector</b> tab → click any red pixel on the Changed Pixels layer → read its <code>transition</code> value to decode exactly which class changed to which.</div>
+    </section>
+
+    <!-- STEP 8 -->
+    <section id="step8">
+      <h2 class="step"><span class="step-num">8</span>Charts &amp; Bar Graphs</h2>
+      <p class="lead">We produce three charts: area per class for 2020, a side-by-side 2020 vs 2021 comparison, and a summary of total changed vs stable area.</p>
+
+      <h3>8.1 — Bar chart: LULC area 2020</h3>
+      <div class="codewrap">
+        <div class="head"><span class="fname">Bar chart — area by ESA class (2020)</span><button class="copybtn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm">// Convert the grouped area list to a FeatureCollection for charting</span>
+<span class="kw">var</span> toFC = <span class="kw">function</span>(groups) {
+  <span class="kw">return</span> ee.<span class="fn">FeatureCollection</span>(groups.<span class="fn">map</span>(<span class="kw">function</span>(g) {
+    g = ee.<span class="fn">Dictionary</span>(g);
+    <span class="kw">return</span> ee.<span class="fn">Feature</span>(<span class="kw">null</span>, {
+      <span class="st">'class'</span>: g.<span class="fn">get</span>(<span class="st">'class'</span>),  <span class="cm">// original ESA value (10, 20, 30...)</span>
+      <span class="st">'area'</span>:  g.<span class="fn">get</span>(<span class="st">'sum'</span>)
+    });
+  }));
+};
+
+<span class="kw">var</span> fc2020 = <span class="fn">toFC</span>(areaGroups2020);
+
+<span class="kw">var</span> barChart2020 = ui.Chart.feature.<span class="fn">byFeature</span>(fc2020, <span class="st">'class'</span>, <span class="st">'area'</span>)
+  .<span class="fn">setChartType</span>(<span class="st">'ColumnChart'</span>)
+  .<span class="fn">setOptions</span>({
+    title:  <span class="st">'ESA WorldCover Area by Class — Rwanda 2020'</span>,
+    hAxis:  {title: <span class="st">'ESA class value (10=Trees 20=Shrub 30=Grass 40=Crops 50=Built 80=Water)'</span>},
+    vAxis:  {title: <span class="st">'Area (km2)'</span>},
+    colors: [<span class="st">'#006400'</span>],
+    legend: {position: <span class="st">'none'</span>}
+  });
+
+<span class="fn">print</span>(barChart2020);</code></pre>
+      </div>
+
+      <h3>8.2 — Grouped bar chart: 2020 vs 2021</h3>
+      <div class="codewrap">
+        <div class="head"><span class="fname">Grouped chart — class area comparison</span><button class="copybtn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="kw">var</span> fc2021 = <span class="fn">toFC</span>(areaGroups2021);
+
+<span class="cm">// Join the two FCs on class value</span>
+<span class="kw">var</span> joined = ee.<span class="fn">Join</span>.<span class="fn">inner</span>().<span class="fn">apply</span>({
+  primary:   fc2020,
+  secondary: fc2021,
+  condition: ee.Filter.<span class="fn">equals</span>({leftField: <span class="st">'class'</span>, rightField: <span class="st">'class'</span>})
+});
+
+<span class="kw">var</span> compFC = ee.<span class="fn">FeatureCollection</span>(joined.<span class="fn">map</span>(<span class="kw">function</span>(f) {
+  <span class="kw">return</span> ee.<span class="fn">Feature</span>(<span class="kw">null</span>, {
+    <span class="st">'class'</span>:    f.<span class="fn">get</span>(<span class="st">'primary.class'</span>),
+    <span class="st">'area2020'</span>: f.<span class="fn">get</span>(<span class="st">'primary.area'</span>),
+    <span class="st">'area2021'</span>: f.<span class="fn">get</span>(<span class="st">'secondary.area'</span>)
+  });
+}));
+
+<span class="kw">var</span> compChart = ui.Chart.feature.<span class="fn">byFeature</span>(compFC, <span class="st">'class'</span>, [<span class="st">'area2020'</span>, <span class="st">'area2021'</span>])
+  .<span class="fn">setChartType</span>(<span class="st">'ColumnChart'</span>)
+  .<span class="fn">setOptions</span>({
+    title:     <span class="st">'ESA WorldCover Area — Rwanda 2020 vs 2021'</span>,
+    hAxis:     {title: <span class="st">'ESA class value'</span>},
+    vAxis:     {title: <span class="st">'Area (km2)'</span>},
+    colors:    [<span class="st">'#00b4d8'</span>, <span class="st">'#e63946'</span>],
+    isStacked: <span class="kw">false</span>
+  });
+
+<span class="fn">print</span>(compChart);</code></pre>
+      </div>
+
+      <h3>8.3 — Bar chart: total changed vs stable area</h3>
+      <div class="codewrap">
+        <div class="head"><span class="fname">Bar chart — changed vs stable (km2)</span><button class="copybtn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="kw">var</span> changeArea = ee.Image.<span class="fn">pixelArea</span>().<span class="fn">divide</span>(<span class="nu">1e6</span>)
+  .<span class="fn">addBands</span>(changed.<span class="fn">rename</span>(<span class="st">'class'</span>));
+
+<span class="kw">var</span> changeGroups = ee.<span class="fn">List</span>(changeArea.<span class="fn">reduceRegion</span>({
+  reducer: ee.Reducer.<span class="fn">sum</span>().<span class="fn">group</span>({groupField: <span class="nu">1</span>, groupName: <span class="st">'class'</span>}),
+  geometry: aoi, scale: <span class="nu">100</span>, maxPixels: <span class="nu">1e13</span>
+}).<span class="fn">get</span>(<span class="st">'groups'</span>));
+
+<span class="kw">var</span> changeFC = ee.<span class="fn">FeatureCollection</span>(changeGroups.<span class="fn">map</span>(<span class="kw">function</span>(g) {
+  g = ee.<span class="fn">Dictionary</span>(g);
+  <span class="kw">return</span> ee.<span class="fn">Feature</span>(<span class="kw">null</span>, {<span class="st">'status'</span>: g.<span class="fn">get</span>(<span class="st">'class'</span>), <span class="st">'area'</span>: g.<span class="fn">get</span>(<span class="st">'sum'</span>)});
+}));
+
+<span class="fn">print</span>(ui.Chart.feature.<span class="fn">byFeature</span>(changeFC, <span class="st">'status'</span>, <span class="st">'area'</span>)
+  .<span class="fn">setChartType</span>(<span class="st">'ColumnChart'</span>)
+  .<span class="fn">setOptions</span>({
+    title:  <span class="st">'Stable vs Changed Land Cover — Rwanda 2020–2021'</span>,
+    hAxis:  {title: <span class="st">'0 = Stable  |  1 = Changed'</span>},
+    vAxis:  {title: <span class="st">'Area (km2)'</span>},
+    colors: [<span class="st">'#00b4d8'</span>], legend: {position: <span class="st">'none'</span>}
+  }));</code></pre>
+      </div>
+      <div class="note warn"><b>Interpreting change magnitude:</b> ESA WorldCover v100 and v200 used different training samples and a refined algorithm. A proportion of the mapped "change" between 2020 and 2021 reflects improved classification accuracy rather than actual land cover transitions — this is especially pronounced for Grassland ↔ Shrubland transitions. Always cross-check suspicious change patches in the Inspector before reporting them.</div>
+
+      <table>
+        <tr><th>Chart type</th><th>Function</th><th>Best for</th></tr>
+        <tr><td>Column / Bar</td><td><code>ui.Chart.feature.byFeature</code></td><td>Comparing class areas</td></tr>
+        <tr><td>Grouped Column</td><td>Pass array of property names</td><td>Side-by-side year comparison</td></tr>
+        <tr><td>Pie</td><td><code>.setChartType('PieChart')</code></td><td>Showing proportions of total area</td></tr>
+      </table>
+    </section>
+
+    <!-- STEP 9 -->
+    <section id="step9">
+      <h2 class="step"><span class="step-num">9</span>Export the Results</h2>
+      <p class="lead">Export the two LULC maps and the binary change layer as GeoTIFFs clipped to Rwanda, ready for QGIS, ArcGIS, or reporting.</p>
+      <div class="codewrap">
+        <div class="head"><span class="fname">Export to Google Drive</span><button class="copybtn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm">// --- Export ESA WorldCover 2020 ---</span>
+Export.image.<span class="fn">toDrive</span>({
+  image: lulc2020.<span class="fn">toFloat</span>(),
+  description: <span class="st">'Rwanda_ESA_WorldCover_2020'</span>,
+  folder: <span class="st">'earthengine'</span>,
+  fileNamePrefix: <span class="st">'rwanda_esa_worldcover_2020'</span>,
+  region: aoi,
+  scale: <span class="nu">10</span>,
+  crs: <span class="st">'EPSG:32735'</span>,    <span class="cm">// UTM Zone 35S — Rwanda</span>
+  maxPixels: <span class="nu">1e13</span>
+});
+
+<span class="cm">// --- Export ESA WorldCover 2021 ---</span>
+Export.image.<span class="fn">toDrive</span>({
+  image: lulc2021.<span class="fn">toFloat</span>(),
+  description: <span class="st">'Rwanda_ESA_WorldCover_2021'</span>,
+  folder: <span class="st">'earthengine'</span>,
+  fileNamePrefix: <span class="st">'rwanda_esa_worldcover_2021'</span>,
+  region: aoi,
+  scale: <span class="nu">10</span>,
+  crs: <span class="st">'EPSG:32735'</span>,
+  maxPixels: <span class="nu">1e13</span>
+});
+
+<span class="cm">// --- Export binary change map ---</span>
+Export.image.<span class="fn">toDrive</span>({
+  image: changed.<span class="fn">toFloat</span>(),
+  description: <span class="st">'Rwanda_ESA_LULC_Change_2020_2021'</span>,
+  folder: <span class="st">'earthengine'</span>,
+  fileNamePrefix: <span class="st">'rwanda_esa_lulc_change'</span>,
+  region: aoi,
+  scale: <span class="nu">10</span>,
+  crs: <span class="st">'EPSG:32735'</span>,
+  maxPixels: <span class="nu">1e13</span>
+});</code></pre>
+      </div>
+      <div class="clicks">
+        <div class="lbl">Click by click</div>
+        <ol>
+          <li>Run the script. The <b>Tasks</b> tab (right panel) shows three pending tasks.</li>
+          <li>Open <b>Tasks</b> → click <b>RUN</b> next to each export task.</li>
+          <li>Confirm settings → click <b>RUN</b> in the dialog for each.</li>
+          <li>When finished, GeoTIFFs appear in your Google Drive <code>earthengine</code> folder.</li>
+          <li>Load in QGIS: <b>Layer → Add Layer → Add Raster Layer</b>. The class values (10, 20, 30…) are preserved in the exported file.</li>
+        </ol>
+      </div>
+      <div class="note"><b>QGIS tip:</b> After loading, right-click the layer → <b>Properties → Symbology → Paletted/Unique values → Classify</b>. Manually set the colour for each class value (10, 20, 30…) to match the ESA WorldCover legend.</div>
+    </section>
+
+    <!-- STEP 10 -->
+    <section id="step10">
+      <h2 class="step"><span class="step-num">10</span>Build the Interactive Web App (UI)</h2>
+      <p class="lead">Build a shareable Earth Engine App with the full 11-class legend and a three-button toggle so viewers can switch between the 2020 map, the 2021 map, and the change layer.</p>
+      <div class="codewrap">
+        <div class="head"><span class="fname">App UI — panel, legend, year toggle</span><button class="copybtn" onclick="copyCode(this)">Copy</button></div>
+        <pre><code><span class="cm">// ---------- APP INTERFACE ----------</span>
+Map.<span class="fn">setControlVisibility</span>({layerList: <span class="kw">false</span>});
+Map.<span class="fn">setOptions</span>(<span class="st">'SATELLITE'</span>);
+
+<span class="cm">// Title panel</span>
+<span class="kw">var</span> panel = ui.<span class="fn">Panel</span>({style: {width: <span class="st">'320px'</span>, padding: <span class="st">'12px'</span>}});
+panel.<span class="fn">add</span>(ui.<span class="fn">Label</span>(<span class="st">'Rwanda ESA WorldCover Explorer'</span>,
+  {fontSize: <span class="st">'18px'</span>, fontWeight: <span class="st">'bold'</span>, color: <span class="st">'#48cae4'</span>}));
+panel.<span class="fn">add</span>(ui.<span class="fn">Label</span>(<span class="st">'ESA WorldCover 10 m | 2020 (v100) &amp; 2021 (v200)'</span>,
+  {fontSize: <span class="st">'11px'</span>, color: <span class="st">'gray'</span>}));
+
+<span class="cm">// Legend</span>
+<span class="kw">var</span> classNames = [<span class="st">'Tree cover'</span>, <span class="st">'Shrubland'</span>, <span class="st">'Grassland'</span>, <span class="st">'Cropland'</span>,
+  <span class="st">'Built-up'</span>, <span class="st">'Bare / sparse veg.'</span>, <span class="st">'Snow &amp; Ice'</span>,
+  <span class="st">'Permanent water'</span>, <span class="st">'Herbaceous wetland'</span>, <span class="st">'Mangroves'</span>, <span class="st">'Moss &amp; lichen'</span>];
+<span class="kw">var</span> classColors = [<span class="st">'#006400'</span>, <span class="st">'#ffbb22'</span>, <span class="st">'#ffff4c'</span>, <span class="st">'#f096ff'</span>,
+  <span class="st">'#fa0000'</span>, <span class="st">'#b4b4b4'</span>, <span class="st">'#f0f0f0'</span>,
+  <span class="st">'#0064c8'</span>, <span class="st">'#0096a0'</span>, <span class="st">'#00cf75'</span>, <span class="st">'#fae6a0'</span>];
+
+<span class="kw">var</span> makeRow = <span class="kw">function</span>(color, name) {
+  <span class="kw">return</span> ui.<span class="fn">Panel</span>([
+    ui.<span class="fn">Label</span>(<span class="st">''</span>, {backgroundColor: color, padding: <span class="st">'8px'</span>, margin: <span class="st">'0 6px 0 0'</span>}),
+    ui.<span class="fn">Label</span>(name, {margin: <span class="st">'0'</span>, fontSize: <span class="st">'12px'</span>})
+  ], ui.Panel.Layout.<span class="fn">Flow</span>(<span class="st">'horizontal'</span>));
+};
+
+<span class="kw">var</span> legend = ui.<span class="fn">Panel</span>({style: {padding: <span class="st">'8px 0 0 0'</span>}});
+legend.<span class="fn">add</span>(ui.<span class="fn">Label</span>(<span class="st">'Land Cover Classes'</span>, {fontWeight: <span class="st">'bold'</span>, fontSize: <span class="st">'13px'</span>}));
+classNames.<span class="fn">forEach</span>(<span class="kw">function</span>(n, i) { legend.<span class="fn">add</span>(<span class="fn">makeRow</span>(classColors[i], n)); });
+panel.<span class="fn">add</span>(legend);
+
+<span class="cm">// Year toggle buttons</span>
+<span class="kw">var</span> lyr2020   = ui.Map.<span class="fn">Layer</span>(vis2020,  visParams, <span class="st">'ESA WorldCover 2020'</span>);
+<span class="kw">var</span> lyr2021   = ui.Map.<span class="fn">Layer</span>(vis2021,  visParams, <span class="st">'ESA WorldCover 2021'</span>);
+<span class="kw">var</span> lyrChange = ui.Map.<span class="fn">Layer</span>(changed, {min:<span class="nu">0</span>, max:<span class="nu">1</span>, palette:[<span class="st">'#1b2f4d'</span>,<span class="st">'#e63946'</span>]}, <span class="st">'Change 2020–2021'</span>);
+Map.layers().<span class="fn">set</span>(<span class="nu">0</span>, lyr2020);
+
+panel.<span class="fn">add</span>(ui.<span class="fn">Label</span>(<span class="st">'Select Layer:'</span>, {fontWeight: <span class="st">'bold'</span>, fontSize: <span class="st">'13px'</span>, margin: <span class="st">'12px 0 4px 0'</span>}));
+panel.<span class="fn">add</span>(ui.<span class="fn">Panel</span>([
+  ui.<span class="fn">Button</span>(<span class="st">'2020'</span>,   <span class="kw">function</span>() { Map.layers().<span class="fn">set</span>(<span class="nu">0</span>, lyr2020); }),
+  ui.<span class="fn">Button</span>(<span class="st">'2021'</span>,   <span class="kw">function</span>() { Map.layers().<span class="fn">set</span>(<span class="nu">0</span>, lyr2021); }),
+  ui.<span class="fn">Button</span>(<span class="st">'Change'</span>, <span class="kw">function</span>() { Map.layers().<span class="fn">set</span>(<span class="nu">0</span>, lyrChange); })
+], ui.Panel.Layout.<span class="fn">Flow</span>(<span class="st">'horizontal'</span>)));
+
+ui.root.<span class="fn">add</span>(panel);</code></pre>
+      </div>
+    </section>
+
+    <!-- STEP 11 -->
+    <section id="step11">
+      <h2 class="step"><span class="step-num">11</span>Publish the App</h2>
+      <p class="lead">Host the app publicly so anyone with the link can explore the LULC maps — no Earth Engine account required.</p>
+      <div class="clicks">
+        <div class="lbl">Click by click</div>
+        <ol>
+          <li>With your script open, click the <b>Apps</b> button at the top of the Code Editor.</li>
+          <li>In the <b>Manage Apps</b> window, click <b>NEW APP</b>.</li>
+          <li>Enter an <b>App Name</b>: <code>rwanda-esa-worldcover</code>.</li>
+          <li>Select or register a <b>Google Cloud Project</b> to host the app.</li>
+          <li>Under <b>Source Code</b>, choose <b>Current contents of editor</b>.</li>
+          <li>Leave other settings default → click <b>PUBLISH</b>.</li>
+          <li>When ready, click the app name to open the live URL and share it.</li>
+        </ol>
+      </div>
+      <div class="note"><b>Result:</b> A public link such as <code>https://your-username.users.earthengine.app/view/rwanda-esa-worldcover</code> displaying the interactive Rwanda land cover map with a legend and 2020 / 2021 / Change toggle buttons.</div>
+    </section>
+
+    <!-- PROMPTS -->
+    <section id="prompts">
+      <h2 class="step"><span class="step-num">AI</span>Prompt Library</h2>
+      <p class="lead">Use these prompts with an AI assistant (ChatGPT, Claude, or Gemini) to generate or debug each block of code. Always review and test the output before running it.</p>
+
+      <div class="prompt">
+        <div class="plbl"><span>Prompt · Boundary</span><button class="pcopy" onclick="copyPrompt(this)">Copy</button></div>
+        <div class="ptext">Write a Google Earth Engine JavaScript snippet that loads the FAO GAUL level-0 administrative boundary dataset, filters it to Rwanda, extracts the geometry as an area of interest, centers the map on it at zoom 8, and adds the boundary as a transparent red outline.</div>
+      </div>
+
+      <div class="prompt">
+        <div class="plbl"><span>Prompt · Load ESA WorldCover</span><button class="pcopy" onclick="copyPrompt(this)">Copy</button></div>
+        <div class="ptext">Write a Google Earth Engine JavaScript snippet that loads the ESA WorldCover Version 1 (asset ID: ESA/WorldCover/v100) and Version 2 (ESA/WorldCover/v200) ImageCollections, extracts the single global image from each using .first(), selects the Map band from each, and prints both images to the console.</div>
+      </div>
+
+      <div class="prompt">
+        <div class="plbl"><span>Prompt · Remap &amp; Visualize</span><button class="pcopy" onclick="copyPrompt(this)">Copy</button></div>
+        <div class="ptext">Write Google Earth Engine code that remaps the non-sequential ESA WorldCover class values (10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 100) to sequential integers 0 through 10 using the .remap() function, then adds both the 2020 and 2021 remapped images to the GEE map with the official ESA WorldCover colour palette and min 0 max 10 visualization parameters.</div>
+      </div>
+
+      <div class="prompt">
+        <div class="plbl"><span>Prompt · Area per Class</span><button class="pcopy" onclick="copyPrompt(this)">Copy</button></div>
+        <div class="ptext">Write a reusable Google Earth Engine function called getAreaByClass that accepts an ESA WorldCover clipped image, computes the area in square kilometres using ee.Image.pixelArea divided by 1e6, adds the class band, applies a grouped sum reducer at 100 metre scale over Rwanda, and returns the grouped list. Apply it to both 2020 and 2021 images and print the results to the console.</div>
+      </div>
+
+      <div class="prompt">
+        <div class="plbl"><span>Prompt · Change Detection</span><button class="pcopy" onclick="copyPrompt(this)">Copy</button></div>
+        <div class="ptext">Write Google Earth Engine code that detects land cover change between the ESA WorldCover 2020 and 2021 maps for Rwanda. Produce a binary change mask using .neq() (1 = changed, 0 = stable), and a transition image encoded as from_class multiplied by 1000 plus to_class, masked to show only changed pixels. Add both layers to the map.</div>
+      </div>
+
+      <div class="prompt">
+        <div class="plbl"><span>Prompt · Grouped Bar Chart</span><button class="pcopy" onclick="copyPrompt(this)">Copy</button></div>
+        <div class="ptext">Write Google Earth Engine code that converts two grouped area lists (for ESA WorldCover 2020 and 2021) to FeatureCollections, joins them on the class field using ee.Join.inner, builds a combined FeatureCollection with properties class, area2020, and area2021, and creates a grouped ColumnChart comparing both years with the title "ESA WorldCover Area - Rwanda 2020 vs 2021". Print it to the console.</div>
+      </div>
+
+      <div class="prompt">
+        <div class="plbl"><span>Prompt · Export</span><button class="pcopy" onclick="copyPrompt(this)">Copy</button></div>
+        <div class="ptext">Write three Google Earth Engine Export.image.toDrive calls that export the ESA WorldCover 2020 map, the ESA WorldCover 2021 map, and the binary change layer for Rwanda as GeoTIFF files to a Google Drive folder called earthengine, at 10 metre scale, in UTM Zone 35S (EPSG:32735), with maxPixels set to 1e13.</div>
+      </div>
+
+      <div class="prompt">
+        <div class="plbl"><span>Prompt · Web App UI</span><button class="pcopy" onclick="copyPrompt(this)">Copy</button></div>
+        <div class="ptext">Write Google Earth Engine User Interface API code that builds an app titled "Rwanda ESA WorldCover Explorer" with a floating side panel containing a title, a subtitle, a full 11-class ESA WorldCover colour legend with labelled rows, and three toggle buttons labelled 2020, 2021, and Change that each swap the active map layer when clicked. Add the panel to the map root.</div>
+      </div>
+
+      <div class="prompt">
+        <div class="plbl"><span>Prompt · Debugging</span><button class="pcopy" onclick="copyPrompt(this)">Copy</button></div>
+        <div class="ptext">I am getting the following error in the Google Earth Engine Code Editor: [paste the exact error message]. Here is my code: [paste your code]. Explain what is causing the error and give me the corrected code.</div>
+      </div>
+    </section>
+
+    <!-- FULL SCRIPT -->
+    <section id="fullscript">
+      <h2 class="step"><span class="step-num">&#x2713;</span>Full Combined Script</h2>
+      <p class="lead">The complete, ready-to-run script. Paste this into a single Code Editor file to run the entire ESA WorldCover analysis and launch the interactive app.</p>
+      <div class="codewrap">
+        <div class="head"><span class="fname">rwanda_esa_worldcover_full.js</span><button class="copybtn" onclick="copyCode(this)">Copy Full Script</button></div>
+        <pre><code><span class="cm">// ============================================================</span>
+<span class="cm">// RWANDA LAND USE / LAND COVER — ESA WORLDCOVER (2020 &amp; 2021)</span>
+<span class="cm">// ESA WorldCover v100 (2020) &amp; v200 (2021) | 10 m | 11 Classes</span>
+<span class="cm">// ============================================================</span>
+
+<span class="cm">// --- 1. Rwanda boundary ---</span>
+<span class="kw">var</span> countries = ee.<span class="fn">FeatureCollection</span>(<span class="st">'FAO/GAUL_SIMPLIFIED_500m/2015/level0'</span>);
+<span class="kw">var</span> rwanda = countries.<span class="fn">filter</span>(ee.Filter.<span class="fn">eq</span>(<span class="st">'ADM0_NAME'</span>, <span class="st">'Rwanda'</span>));
+<span class="kw">var</span> aoi = rwanda.<span class="fn">geometry</span>();
+Map.<span class="fn">centerObject</span>(aoi, <span class="nu">8</span>);
+Map.<span class="fn">addLayer</span>(rwanda, {color: <span class="st">'red'</span>, fillColor: <span class="st">'00000000'</span>}, <span class="st">'Rwanda Boundary'</span>);
+
+<span class="cm">// --- 2. Load ESA WorldCover ---</span>
+<span class="kw">var</span> esa2020 = ee.<span class="fn">ImageCollection</span>(<span class="st">'ESA/WorldCover/v100'</span>).<span class="fn">first</span>().<span class="fn">select</span>(<span class="st">'Map'</span>);
+<span class="kw">var</span> esa2021 = ee.<span class="fn">ImageCollection</span>(<span class="st">'ESA/WorldCover/v200'</span>).<span class="fn">first</span>().<span class="fn">select</span>(<span class="st">'Map'</span>);
+
+<span class="cm">// --- 3. Clip to Rwanda (keep original class values for analysis) ---</span>
+<span class="kw">var</span> lulc2020 = esa2020.<span class="fn">clip</span>(aoi);
+<span class="kw">var</span> lulc2021 = esa2021.<span class="fn">clip</span>(aoi);
+
+<span class="cm">// --- 4. Remap for custom palette visualization ---</span>
+<span class="kw">var</span> fromValues = [<span class="nu">10</span>,<span class="nu">20</span>,<span class="nu">30</span>,<span class="nu">40</span>,<span class="nu">50</span>,<span class="nu">60</span>,<span class="nu">70</span>,<span class="nu">80</span>,<span class="nu">90</span>,<span class="nu">95</span>,<span class="nu">100</span>];
+<span class="kw">var</span> toValues   = [<span class="nu">0</span>,<span class="nu">1</span>,<span class="nu">2</span>,<span class="nu">3</span>,<span class="nu">4</span>,<span class="nu">5</span>,<span class="nu">6</span>,<span class="nu">7</span>,<span class="nu">8</span>,<span class="nu">9</span>,<span class="nu">10</span>];
+<span class="kw">var</span> esaPalette = [<span class="st">'006400'</span>,<span class="st">'ffbb22'</span>,<span class="st">'ffff4c'</span>,<span class="st">'f096ff'</span>,<span class="st">'fa0000'</span>,
+                  <span class="st">'b4b4b4'</span>,<span class="st">'f0f0f0'</span>,<span class="st">'0064c8'</span>,<span class="st">'0096a0'</span>,<span class="st">'00cf75'</span>,<span class="st">'fae6a0'</span>];
+<span class="kw">var</span> visParams = {min: <span class="nu">0</span>, max: <span class="nu">10</span>, palette: esaPalette};
+
+<span class="kw">var</span> vis2020 = lulc2020.<span class="fn">remap</span>(fromValues, toValues).<span class="fn">rename</span>(<span class="st">'class'</span>);
+<span class="kw">var</span> vis2021 = lulc2021.<span class="fn">remap</span>(fromValues, toValues).<span class="fn">rename</span>(<span class="st">'class'</span>);
+
+Map.<span class="fn">addLayer</span>(vis2020, visParams, <span class="st">'ESA WorldCover 2020'</span>);
+Map.<span class="fn">addLayer</span>(vis2021, visParams, <span class="st">'ESA WorldCover 2021'</span>);
+
+<span class="cm">// --- 5. Area per class ---</span>
+<span class="kw">function</span> <span class="fn">getAreaByClass</span>(lulcImage) {
+  <span class="kw">var</span> areaImg = ee.Image.<span class="fn">pixelArea</span>().<span class="fn">divide</span>(<span class="nu">1e6</span>).<span class="fn">addBands</span>(lulcImage.<span class="fn">rename</span>(<span class="st">'class'</span>));
+  <span class="kw">return</span> ee.<span class="fn">List</span>(areaImg.<span class="fn">reduceRegion</span>({
+    reducer: ee.Reducer.<span class="fn">sum</span>().<span class="fn">group</span>({groupField: <span class="nu">1</span>, groupName: <span class="st">'class'</span>}),
+    geometry: aoi, scale: <span class="nu">100</span>, maxPixels: <span class="nu">1e13</span>
+  }).<span class="fn">get</span>(<span class="st">'groups'</span>));
+}
+<span class="kw">var</span> areaGroups2020 = <span class="fn">getAreaByClass</span>(lulc2020);
+<span class="kw">var</span> areaGroups2021 = <span class="fn">getAreaByClass</span>(lulc2021);
+<span class="fn">print</span>(<span class="st">'Area by class 2020 (km2):'</span>, areaGroups2020);
+<span class="fn">print</span>(<span class="st">'Area by class 2021 (km2):'</span>, areaGroups2021);
+
+<span class="cm">// --- 6. Change detection ---</span>
+<span class="kw">var</span> changed = lulc2020.<span class="fn">neq</span>(lulc2021).<span class="fn">rename</span>(<span class="st">'changed'</span>);
+<span class="kw">var</span> transition = lulc2020.<span class="fn">multiply</span>(<span class="nu">1000</span>).<span class="fn">add</span>(lulc2021)
+  .<span class="fn">rename</span>(<span class="st">'transition'</span>).<span class="fn">updateMask</span>(changed).<span class="fn">clip</span>(aoi);
+Map.<span class="fn">addLayer</span>(changed, {min:<span class="nu">0</span>, max:<span class="nu">1</span>, palette:[<span class="st">'#1b2f4d'</span>,<span class="st">'#e63946'</span>]}, <span class="st">'Changed Pixels'</span>);
+
+<span class="cm">// --- 7. Charts ---</span>
+<span class="kw">var</span> toFC = <span class="kw">function</span>(groups) {
+  <span class="kw">return</span> ee.<span class="fn">FeatureCollection</span>(groups.<span class="fn">map</span>(<span class="kw">function</span>(g) {
+    g = ee.<span class="fn">Dictionary</span>(g);
+    <span class="kw">return</span> ee.<span class="fn">Feature</span>(<span class="kw">null</span>, {<span class="st">'class'</span>: g.<span class="fn">get</span>(<span class="st">'class'</span>), <span class="st">'area'</span>: g.<span class="fn">get</span>(<span class="st">'sum'</span>)});
+  }));
+};
+<span class="kw">var</span> fc2020 = <span class="fn">toFC</span>(areaGroups2020);
+<span class="kw">var</span> fc2021 = <span class="fn">toFC</span>(areaGroups2021);
+
+<span class="fn">print</span>(ui.Chart.feature.<span class="fn">byFeature</span>(fc2020, <span class="st">'class'</span>, <span class="st">'area'</span>)
+  .<span class="fn">setChartType</span>(<span class="st">'ColumnChart'</span>)
+  .<span class="fn">setOptions</span>({title:<span class="st">'ESA WorldCover Area by Class — Rwanda 2020'</span>,
+    hAxis:{title:<span class="st">'ESA class value'</span>}, vAxis:{title:<span class="st">'Area (km2)'</span>},
+    colors:[<span class="st">'#006400'</span>], legend:{position:<span class="st">'none'</span>}}));
+
+<span class="kw">var</span> joined = ee.<span class="fn">Join</span>.<span class="fn">inner</span>().<span class="fn">apply</span>({primary:fc2020, secondary:fc2021,
+  condition:ee.Filter.<span class="fn">equals</span>({leftField:<span class="st">'class'</span>, rightField:<span class="st">'class'</span>})});
+<span class="kw">var</span> compFC = ee.<span class="fn">FeatureCollection</span>(joined.<span class="fn">map</span>(<span class="kw">function</span>(f){
+  <span class="kw">return</span> ee.<span class="fn">Feature</span>(<span class="kw">null</span>, {<span class="st">'class'</span>:f.<span class="fn">get</span>(<span class="st">'primary.class'</span>),
+    <span class="st">'area2020'</span>:f.<span class="fn">get</span>(<span class="st">'primary.area'</span>), <span class="st">'area2021'</span>:f.<span class="fn">get</span>(<span class="st">'secondary.area'</span>)});
+}));
+<span class="fn">print</span>(ui.Chart.feature.<span class="fn">byFeature</span>(compFC, <span class="st">'class'</span>, [<span class="st">'area2020'</span>,<span class="st">'area2021'</span>])
+  .<span class="fn">setChartType</span>(<span class="st">'ColumnChart'</span>)
+  .<span class="fn">setOptions</span>({title:<span class="st">'ESA WorldCover — Rwanda 2020 vs 2021'</span>,
+    hAxis:{title:<span class="st">'ESA class value'</span>}, vAxis:{title:<span class="st">'Area (km2)'</span>},
+    colors:[<span class="st">'#00b4d8'</span>,<span class="st">'#e63946'</span>], isStacked:<span class="kw">false</span>}));
+
+<span class="cm">// --- 8. Exports ---</span>
+Export.image.<span class="fn">toDrive</span>({image:lulc2020.<span class="fn">toFloat</span>(), description:<span class="st">'Rwanda_ESA_WorldCover_2020'</span>,
+  folder:<span class="st">'earthengine'</span>, fileNamePrefix:<span class="st">'rwanda_esa_worldcover_2020'</span>,
+  region:aoi, scale:<span class="nu">10</span>, crs:<span class="st">'EPSG:32735'</span>, maxPixels:<span class="nu">1e13</span>});
+Export.image.<span class="fn">toDrive</span>({image:lulc2021.<span class="fn">toFloat</span>(), description:<span class="st">'Rwanda_ESA_WorldCover_2021'</span>,
+  folder:<span class="st">'earthengine'</span>, fileNamePrefix:<span class="st">'rwanda_esa_worldcover_2021'</span>,
+  region:aoi, scale:<span class="nu">10</span>, crs:<span class="st">'EPSG:32735'</span>, maxPixels:<span class="nu">1e13</span>});
+Export.image.<span class="fn">toDrive</span>({image:changed.<span class="fn">toFloat</span>(), description:<span class="st">'Rwanda_ESA_LULC_Change_2020_2021'</span>,
+  folder:<span class="st">'earthengine'</span>, fileNamePrefix:<span class="st">'rwanda_esa_lulc_change'</span>,
+  region:aoi, scale:<span class="nu">10</span>, crs:<span class="st">'EPSG:32735'</span>, maxPixels:<span class="nu">1e13</span>});
+
+<span class="cm">// --- 9. Web App UI ---</span>
+Map.<span class="fn">setControlVisibility</span>({layerList: <span class="kw">false</span>});
+Map.<span class="fn">setOptions</span>(<span class="st">'SATELLITE'</span>);
+
+<span class="kw">var</span> panel = ui.<span class="fn">Panel</span>({style:{width:<span class="st">'320px'</span>, padding:<span class="st">'12px'</span>}});
+panel.<span class="fn">add</span>(ui.<span class="fn">Label</span>(<span class="st">'Rwanda ESA WorldCover Explorer'</span>,
+  {fontSize:<span class="st">'18px'</span>, fontWeight:<span class="st">'bold'</span>, color:<span class="st">'#48cae4'</span>}));
+panel.<span class="fn">add</span>(ui.<span class="fn">Label</span>(<span class="st">'ESA WorldCover 10 m | 2020 (v100) &amp; 2021 (v200)'</span>,
+  {fontSize:<span class="st">'11px'</span>, color:<span class="st">'gray'</span>}));
+
+<span class="kw">var</span> classNames  = [<span class="st">'Tree cover'</span>,<span class="st">'Shrubland'</span>,<span class="st">'Grassland'</span>,<span class="st">'Cropland'</span>,
+  <span class="st">'Built-up'</span>,<span class="st">'Bare / sparse veg.'</span>,<span class="st">'Snow &amp; Ice'</span>,
+  <span class="st">'Permanent water'</span>,<span class="st">'Herbaceous wetland'</span>,<span class="st">'Mangroves'</span>,<span class="st">'Moss &amp; lichen'</span>];
+<span class="kw">var</span> classColors = [<span class="st">'#006400'</span>,<span class="st">'#ffbb22'</span>,<span class="st">'#ffff4c'</span>,<span class="st">'#f096ff'</span>,<span class="st">'#fa0000'</span>,
+  <span class="st">'#b4b4b4'</span>,<span class="st">'#f0f0f0'</span>,<span class="st">'#0064c8'</span>,<span class="st">'#0096a0'</span>,<span class="st">'#00cf75'</span>,<span class="st">'#fae6a0'</span>];
+
+<span class="kw">var</span> makeRow = <span class="kw">function</span>(color, name){
+  <span class="kw">return</span> ui.<span class="fn">Panel</span>([
+    ui.<span class="fn">Label</span>(<span class="st">''</span>,{backgroundColor:color,padding:<span class="st">'8px'</span>,margin:<span class="st">'0 6px 0 0'</span>}),
+    ui.<span class="fn">Label</span>(name,{margin:<span class="st">'0'</span>,fontSize:<span class="st">'12px'</span>})
+  ], ui.Panel.Layout.<span class="fn">Flow</span>(<span class="st">'horizontal'</span>));
+};
+<span class="kw">var</span> legend = ui.<span class="fn">Panel</span>({style:{padding:<span class="st">'8px 0 0 0'</span>}});
+legend.<span class="fn">add</span>(ui.<span class="fn">Label</span>(<span class="st">'Land Cover Classes'</span>,{fontWeight:<span class="st">'bold'</span>,fontSize:<span class="st">'13px'</span>}));
+classNames.<span class="fn">forEach</span>(<span class="kw">function</span>(n,i){ legend.<span class="fn">add</span>(<span class="fn">makeRow</span>(classColors[i],n)); });
+panel.<span class="fn">add</span>(legend);
+
+<span class="kw">var</span> lyr2020   = ui.Map.<span class="fn">Layer</span>(vis2020, visParams, <span class="st">'ESA WorldCover 2020'</span>);
+<span class="kw">var</span> lyr2021   = ui.Map.<span class="fn">Layer</span>(vis2021, visParams, <span class="st">'ESA WorldCover 2021'</span>);
+<span class="kw">var</span> lyrChange = ui.Map.<span class="fn">Layer</span>(changed,
+  {min:<span class="nu">0</span>,max:<span class="nu">1</span>,palette:[<span class="st">'#1b2f4d'</span>,<span class="st">'#e63946'</span>]}, <span class="st">'Change 2020–2021'</span>);
+Map.layers().<span class="fn">set</span>(<span class="nu">0</span>, lyr2020);
+
+panel.<span class="fn">add</span>(ui.<span class="fn">Label</span>(<span class="st">'Select Layer:'</span>,{fontWeight:<span class="st">'bold'</span>,fontSize:<span class="st">'13px'</span>,margin:<span class="st">'12px 0 4px 0'</span>}));
+panel.<span class="fn">add</span>(ui.<span class="fn">Panel</span>([
+  ui.<span class="fn">Button</span>(<span class="st">'2020'</span>,   <span class="kw">function</span>(){ Map.layers().<span class="fn">set</span>(<span class="nu">0</span>, lyr2020);   }),
+  ui.<span class="fn">Button</span>(<span class="st">'2021'</span>,   <span class="kw">function</span>(){ Map.layers().<span class="fn">set</span>(<span class="nu">0</span>, lyr2021);   }),
+  ui.<span class="fn">Button</span>(<span class="st">'Change'</span>, <span class="kw">function</span>(){ Map.layers().<span class="fn">set</span>(<span class="nu">0</span>, lyrChange); })
+], ui.Panel.Layout.<span class="fn">Flow</span>(<span class="st">'horizontal'</span>)));
+
+ui.root.<span class="fn">add</span>(panel);</code></pre>
+      </div>
+    </section>
+
+    <footer>
+      <p><b>Rwanda Land Use / Land Cover — ESA WorldCover</b> — GEE Practical Session · ESA WorldCover v100 (2020) &amp; v200 (2021) · 10 m · 11 LULC classes · Sentinel-1 + Sentinel-2 · Clipped to Rwanda.</p>
+      <p style="margin-top:6px">Method: Load ESA WorldCover global mosaic → clip to Rwanda → remap non-sequential class values for visualization → grouped area statistics → binary change detection → export &amp; publish. Note: change between 2020 and 2021 may include algorithm improvements in addition to real land cover transitions.</p>
+    </footer>
+
+  </main>
+  </div>
+</div>
+
+<script>
+  function copyCode(btn){
+    const pre = btn.closest('.codewrap').querySelector('pre code');
+    navigator.clipboard.writeText(pre.innerText).then(()=>{
+      const orig = btn.textContent;
+      btn.textContent = 'Copied ✓'; btn.classList.add('done');
+      setTimeout(()=>{btn.textContent=orig;btn.classList.remove('done')},1600);
+    });
+  }
+  function copyPrompt(btn){
+    const txt = btn.closest('.prompt').querySelector('.ptext').innerText;
+    navigator.clipboard.writeText(txt).then(()=>{
+      const orig = btn.textContent;
+      btn.textContent = 'Copied ✓'; btn.classList.add('done');
+      setTimeout(()=>{btn.textContent=orig;btn.classList.remove('done')},1600);
+    });
+  }
+  const links = document.querySelectorAll('.sidebar a');
+  const sections = [...links].map(a=>document.querySelector(a.getAttribute('href')));
+  window.addEventListener('scroll', ()=>{
+    let idx = 0;
+    sections.forEach((s,i)=>{ if(s && s.getBoundingClientRect().top < 120) idx = i; });
+    links.forEach(l=>l.classList.remove('active'));
+    if(links[idx]) links[idx].classList.add('active');
+  });
+</script>
+</body>
+</html>
